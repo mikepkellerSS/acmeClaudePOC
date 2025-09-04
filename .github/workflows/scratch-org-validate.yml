@@ -9,6 +9,8 @@ on:
 jobs:
     validate:
       runs-on: ubuntu-latest
+      env:
+          DEVHUB_AUTH_URL: ${{ secrets.DEVHUB_AUTH_URL }}
 
       steps:
         - uses: actions/checkout@v3
@@ -56,19 +58,19 @@ jobs:
             fi
 
         - name: Authenticate Dev Hub (if secret exists)
-          if: ${{ secrets.DEVHUB_AUTH_URL != '' }}
+          if: env.DEVHUB_AUTH_URL != ''
           run: |
-            echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth.txt
-            sf org login sfdx-url -f auth.txt -a devhub -d
-            rm auth.txt
+              echo "${{ env.DEVHUB_AUTH_URL }}" > auth.txt
+              sf org login sfdx-url -f auth.txt -a devhub -d
+              rm auth.txt
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
-          if: ${{ secrets.DEVHUB_AUTH_URL != '' }}
+          if: env.DEVHUB_AUTH_URL != ''
           continue-on-error: true
           run: |
-            sf org create scratch -f config/project-scratch-def.json -a scratch-org -d -y 1 -w 10
-            echo "org_created=true" >> $GITHUB_OUTPUT
+              sf org create scratch -f config/project-scratch-def.json -a scratch-org -d -y 1 -w 10
+              echo "org_created=true" >> $GITHUB_OUTPUT
 
         - name: Deploy to Scratch Org
           if: steps.create-org.outputs.org_created == 'true'
