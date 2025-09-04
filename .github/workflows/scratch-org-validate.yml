@@ -1,10 +1,10 @@
 name: Validate in Scratch Org
 
-  on:
+on:
     repository_dispatch:
       types: [validate-code]
 
-  jobs:
+jobs:
     validate-and-fix:
       runs-on: ubuntu-latest
       outputs:
