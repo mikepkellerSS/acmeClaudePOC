@@ -27,7 +27,7 @@ name: Validate in Scratch Org
           id: create-org
           run: |
             sfdx org:create:scratch -f config/project-scratch-def.json -a scratch-org -d -y 1
-            echo "::set-output name=username::$(sfdx force:org:display -u scratch-org --json | jq -r '.result.username')"
+            echo "username=$(sfdx force:org:display -u scratch-org --json | jq -r '.result.username')" >> $GITHUB_OUTPUT
 
         - name: Save Generated Code
           run: |
@@ -67,7 +67,7 @@ name: Validate in Scratch Org
               fi
             done
 
-            echo "::set-output name=success::$SUCCESS"
+            echo "success=$SUCCESS" >> $GITHUB_OUTPUT
 
         - name: Run Tests
           if: steps.validation.outputs.success == 'true'
@@ -81,12 +81,12 @@ name: Validate in Scratch Org
             # Collect all the fixed/validated code
             python3 .github/scripts/collect-validated-code.py > validated-code.txt
             VALIDATED_CODE=$(base64 -w 0 validated-code.txt)
-            echo "::set-output name=code::$VALIDATED_CODE"
+            echo "code=$VALIDATED_CODE" >> $GITHUB_OUTPUT
 
         - name: Delete Scratch Org
           if: always()
           run: |
-            sfdx org:delete:scratch -u scratch-org -p
+            sfdx org:delete:scratch -u scratch-org -p || true
 
         - name: Report Back to Replit
           if: always()
