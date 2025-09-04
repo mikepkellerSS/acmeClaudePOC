@@ -1,0 +1,110 @@
+name: Validate in Scratch Org
+
+  on:
+    repository_dispatch:
+      types: [validate-code]
+
+  jobs:
+    validate-and-fix:
+      runs-on: ubuntu-latest
+      outputs:
+        validated: ${{ steps.validation.outputs.success }}
+
+      steps:
+        - uses: actions/checkout@v3
+
+        - name: Install Salesforce CLI
+          run: |
+            npm install -g @salesforce/cli
+
+        - name: Authenticate Dev Hub
+          run: |
+            echo "${{ secrets.SFDX_AUTH_URL }}" > auth.txt
+            sfdx auth:sfdxurl:store -f auth.txt -a devhub -d
+            rm auth.txt
+
+        - name: Create Scratch Org
+          id: create-org
+          run: |
+            sfdx org:create:scratch -f config/project-scratch-def.json -a scratch-org -d -y 1
+            echo "::set-output name=username::$(sfdx force:org:display -u scratch-org --json | jq -r '.result.username')"
+
+        - name: Save Generated Code
+          run: |
+            echo "${{ github.event.client_payload.code }}" | base64 -d > generated-code.txt
+            # Parse and create files from the generated code
+            python3 .github/scripts/parse-and-create-files.py
+
+        - name: Deploy and Fix Loop
+          id: validation
+          env:
+            ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          run: |
+            MAX_ATTEMPTS=5
+            ATTEMPT=1
+            SUCCESS=false
+
+            while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+              echo "Deployment attempt $ATTEMPT of $MAX_ATTEMPTS"
+
+              # Try to deploy
+              if sfdx force:source:push -u scratch-org --json > deploy-result.json 2>&1; then
+                echo "✅ Deployment successful!"
+                SUCCESS=true
+                break
+              else
+                echo "❌ Deployment failed on attempt $ATTEMPT"
+
+                if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+                  echo "Attempting to fix errors..."
+
+                  # Call Python script to fix errors with Claude
+                  python3 .github/scripts/fix-deployment-errors.py deploy-result.json
+
+                  # Script updates the files, try again
+                  ATTEMPT=$((ATTEMPT + 1))
+                fi
+              fi
+            done
+
+            echo "::set-output name=success::$SUCCESS"
+
+        - name: Run Tests
+          if: steps.validation.outputs.success == 'true'
+          run: |
+            sfdx apex:test:run -u scratch-org --wait 10 --resultformat json --codecoverage
+
+        - name: Get Fixed Code
+          if: steps.validation.outputs.success == 'true'
+          id: get-code
+          run: |
+            # Collect all the fixed/validated code
+            python3 .github/scripts/collect-validated-code.py > validated-code.txt
+            VALIDATED_CODE=$(base64 -w 0 validated-code.txt)
+            echo "::set-output name=code::$VALIDATED_CODE"
+
+        - name: Delete Scratch Org
+          if: always()
+          run: |
+            sfdx org:delete:scratch -u scratch-org -p
+
+        - name: Report Back to Replit
+          if: always()
+          run: |
+            if [ "${{ steps.validation.outputs.success }}" == "true" ]; then
+              curl -X POST ${{ github.event.client_payload.callback_url }} \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "success": true,
+                  "storyId": "${{ github.event.client_payload.story_id }}",
+                  "validatedCode": "${{ steps.get-code.outputs.code }}"
+                }'
+            else
+              curl -X POST ${{ github.event.client_payload.callback_url }} \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "success": false,
+                  "storyId": "${{ github.event.client_payload.story_id }}",
+                  "errors": "Failed validation after maximum attempts"
+                }'
+            fi
