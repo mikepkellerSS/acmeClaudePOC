@@ -106,24 +106,19 @@ jobs:
                   "prNumber": "${{ github.event.pull_request.number }}"
                 }'
             else
-              # Try to get the error from the deployment
+              DEPLOY_ERROR="Deployment failed - check GitHub Actions logs"
               if [ -f deploy-output.txt ]; then
-                DEPLOY_ERROR=$(grep -E "Error|Failed|error|failed" deploy-output.txt | head -20 | tr '\n' ' ' | tr '"' "'" || echo "Deployment failed")
-              else
-                DEPLOY_ERROR="Deployment failed - no output captured"
+                DEPLOY_ERROR=$(grep -E "Error|Failed|error|failed" deploy-output.txt | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed")
               fi
               
-              # Send error with proper JSON escaping
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
-                -d @- <<EOF
-              {
-                "success": false,
-                "storyId": "${{ github.event.pull_request.head.ref }}",
-                "prNumber": "${{ github.event.pull_request.number }}",
-                "errors": "${DEPLOY_ERROR}"
-              }
-              EOF
+                -d "{
+                  \"success\": false,
+                  \"storyId\": \"${{ github.event.pull_request.head.ref }}\",
+                  \"prNumber\": \"${{ github.event.pull_request.number }}\",
+                  \"errors\": \"$DEPLOY_ERROR\"
+                }"
             fi
 
         - name: Run Tests
