@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadataType xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Configurable Lead Scoring Criteria</description>
+    <label>ACME Scoring Criteria</label>
+    <pluralLabel>ACME Scoring Criteria</pluralLabel>
+    <visibility>Public</visibility>
+</CustomMetadataType>
