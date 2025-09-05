@@ -1,105 +1,65 @@
 /**
- * Service class for lead scoring calculations
- * Implements complex scoring logic across multiple dimensions
+ * Test class for ACME_LeadScoringService
+ * Covers lead scoring calculation scenarios
  */
-public with sharing class ACME_LeadScoringService {
+@isTest
+private class ACME_LeadScoringService_Test {
     
     /**
-     * Calculate lead score based on multiple factors
-     * @param lead The lead record to score
-     * @return Calculated lead score between 0-100
+     * Test lead scoring for technology industry
      */
-    public static Decimal calculateLeadScore(Lead lead) {
-        Decimal score = 0;
-        
-        // Demographic scoring
-        score += calculateDemographicScore(lead);
-        
-        // Engagement scoring
-        score += calculateEngagementScore(lead);
-        
-        // Ensure score is within 0-100 range
-        return Math.min(Math.max(score, 0), 100);
-    }
-    
-    /**
-     * Calculate score based on demographic factors
-     * @param lead Lead record to assess
-     * @return Demographic score component
-     */
-    private static Decimal calculateDemographicScore(Lead lead) {
-        Decimal demographicScore = 0;
-        
-        // Industry scoring
-        if (String.isNotBlank(lead.Industry)) {
-            switch on lead.Industry.toLowerCase() {
-                when 'technology', 'finance' {
-                    demographicScore += 30;
-                }
-                when 'healthcare', 'education' {
-                    demographicScore += 20;
-                }
-                when else {
-                    demographicScore += 10;
-                }
-            }
-        }
-        
-        // Company size scoring
-        if (lead.NumberOfEmployees != null) {
-            if (lead.NumberOfEmployees > 1000) {
-                demographicScore += 25;
-            } else if (lead.NumberOfEmployees > 100) {
-                demographicScore += 15;
-            }
-        }
-        
-        return demographicScore;
-    }
-    
-    /**
-     * Calculate score based on engagement metrics
-     * @param lead Lead record to assess
-     * @return Engagement score component
-     */
-    private static Decimal calculateEngagementScore(Lead lead) {
-        Decimal engagementScore = 0;
-        
-        // Website interactions (hypothetical tracking)
-        if (lead.Website_Visits__c != null) {
-            engagementScore += Math.min(lead.Website_Visits__c * 2, 20);
-        }
-        
-        // Email interactions (hypothetical tracking)
-        if (lead.Email_Opens__c != null) {
-            engagementScore += Math.min(lead.Email_Opens__c * 1.5, 15);
-        }
-        
-        return engagementScore;
-    }
-    
-    /**
-     * Update lead score and last scored date
-     * @param leadId ID of lead to update
-     * @param score Calculated lead score
-     */
-    public static void updateLeadScore(Id leadId, Decimal score) {
-        // Verify user has edit permissions
-        if (!Schema.sObjectType.Lead.isUpdateable()) {
-            throw new System.NoAccessException('Insufficient permissions to update lead');
-        }
-        
-        Lead leadToUpdate = new Lead(
-            Id = leadId,
-            ACME_Lead_Score__c = score,
-            ACME_Last_Scored_Date__c = System.now()
+    @isTest
+    static void testTechnologyIndustryScoring() {
+        Lead testLead = new Lead(
+            FirstName = 'Tech',
+            LastName = 'Lead',
+            Industry = 'Technology',
+            NumberOfEmployees = 500,
+            Website_Visits__c = 10,
+            Email_Opens__c = 5
         );
         
-        try {
-            update leadToUpdate;
-        } catch (DmlException e) {
-            System.debug(LoggingLevel.ERROR, 'Lead score update failed: ' + e.getMessage());
-            throw e;
-        }
+        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
+        
+        System.assert(score > 50, 'Technology lead should have high score');
+    }
+    
+    /**
+     * Test lead scoring for small company
+     */
+    @isTest
+    static void testSmallCompanyScoring() {
+        Lead testLead = new Lead(
+            FirstName = 'Small',
+            LastName = 'Business',
+            Industry = 'Retail',
+            NumberOfEmployees = 50,
+            Website_Visits__c = 3,
+            Email_Opens__c = 2
+        );
+        
+        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
+        
+        System.assert(score < 50, 'Small company should have lower score');
+    }
+    
+    /**
+     * Test score update functionality
+     */
+    @isTest
+    static void testLeadScoreUpdate() {
+        Lead testLead = new Lead(
+            FirstName = 'Update',
+            LastName = 'Test',
+            Company = 'Test Company'
+        );
+        insert testLead;
+        
+        Test.startTest();
+        ACME_LeadScoringService.updateLeadScore(testLead.Id, 75);
+        Test.stopTest();
+        
+        Lead updatedLead = [SELECT ACME_Lead_Score__c FROM Lead WHERE Id = :testLead.Id];
+        System.assertEquals(75, updatedLead.ACME_Lead_Score__c, 'Lead score should be updated');
     }
 }
