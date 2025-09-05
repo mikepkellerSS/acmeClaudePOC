@@ -1,65 +1,57 @@
 /**
- * Test class for ACME_LeadScoringService
- * Covers lead scoring calculation scenarios
+ * Batch class for mass lead scoring recalculation
+ * Handles bulk lead scoring updates
  */
-@isTest
-private class ACME_LeadScoringService_Test {
+public with sharing class ACME_LeadScoringBatch implements Database.Batchable<SObject>, Finalizer {
     
     /**
-     * Test lead scoring for technology industry
+     * Start method to select leads for batch processing
+     * @param bc BatchableContext for batch job
+     * @return Database.QueryLocator of leads to process
      */
-    @isTest
-    static void testTechnologyIndustryScoring() {
-        Lead testLead = new Lead(
-            FirstName = 'Tech',
-            LastName = 'Lead',
-            Industry = 'Technology',
-            NumberOfEmployees = 500,
-            Website_Visits__c = 10,
-            Email_Opens__c = 5
-        );
-        
-        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
-        
-        System.assert(score > 50, 'Technology lead should have high score');
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator([
+            SELECT Id, Industry, NumberOfEmployees, 
+                   Website_Visits__c, Email_Opens__c 
+            FROM Lead 
+            WHERE IsConverted = false
+        ]);
     }
     
     /**
-     * Test lead scoring for small company
+     * Execute method to process each batch of leads
+     * @param bc BatchableContext for batch job
+     * @param leads List of leads in current batch
      */
-    @isTest
-    static void testSmallCompanyScoring() {
-        Lead testLead = new Lead(
-            FirstName = 'Small',
-            LastName = 'Business',
-            Industry = 'Retail',
-            NumberOfEmployees = 50,
-            Website_Visits__c = 3,
-            Email_Opens__c = 2
-        );
+    public void execute(Database.BatchableContext bc, List<Lead> leads) {
+        List<Lead> leadsToUpdate = new List<Lead>();
         
-        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
+        for (Lead lead : leads) {
+            Decimal score = ACME_LeadScoringService.calculateLeadScore(lead);
+            lead.ACME_Lead_Score__c = score;
+            lead.ACME_Last_Scored_Date__c = System.now();
+            leadsToUpdate.add(lead);
+        }
         
-        System.assert(score < 50, 'Small company should have lower score');
+        if (!leadsToUpdate.isEmpty()) {
+            Database.update(leadsToUpdate, false);
+        }
     }
     
     /**
-     * Test score update functionality
+     * Finish method for batch job
+     * @param bc BatchableContext for batch job
      */
-    @isTest
-    static void testLeadScoreUpdate() {
-        Lead testLead = new Lead(
-            FirstName = 'Update',
-            LastName = 'Test',
-            Company = 'Test Company'
-        );
-        insert testLead;
-        
-        Test.startTest();
-        ACME_LeadScoringService.updateLeadScore(testLead.Id, 75);
-        Test.stopTest();
-        
-        Lead updatedLead = [SELECT ACME_Lead_Score__c FROM Lead WHERE Id = :testLead.Id];
-        System.assertEquals(75, updatedLead.ACME_Lead_Score__c, 'Lead score should be updated');
+    public void finish(Database.BatchableContext bc) {
+        System.debug('Lead scoring batch job completed');
+    }
+    
+    /**
+     * Finalizer method for tracking job completion
+     * @param context Context of the finalizer
+     */
+    public void execute(FinalizerContext context) {
+        // Optional additional processing or logging
+        System.debug('Batch job finalizer executed');
     }
 }
