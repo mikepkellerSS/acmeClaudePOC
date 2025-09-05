@@ -1,79 +1,85 @@
 /**
- * Service class for lead scoring calculations and management
- * Implements secure, modular lead scoring logic
+ * Service class for calculating lead scores based on predefined metrics
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * Calculate lead score based on predefined criteria
-     * @param lead The lead to score
-     * @return Calculated lead score
+     * Calculates the lead score based on active scoring metrics
+     * @param lead The lead record to score
+     * @return Integer representing the calculated lead score
      */
-    public static Decimal calculateLeadScore(Lead lead) {
-        Decimal engagementPoints = calculateEngagementPoints(lead);
-        Decimal demographicPoints = calculateDemographicPoints(lead);
+    public static Integer calculateLeadScore(Lead lead) {
+        // Check for read access to Lead Scoring Metrics
+        if (!Schema.SObjectType.ACME_Lead_Scoring_Metric__c.isAccessible()) {
+            throw new System.NoAccessException('No access to Lead Scoring Metrics');
+        }
+
+        // Retrieve active scoring metrics
+        List<ACME_Lead_Scoring_Metric__c> metrics = [
+            SELECT Name__c, Weight__c, Category__c 
+            FROM ACME_Lead_Scoring_Metric__c 
+            WHERE Active__c = true 
+            WITH SECURITY_ENFORCED
+        ];
         
-        Decimal totalScore = engagementPoints + demographicPoints;
-        totalScore = Math.min(Math.max(totalScore, 0), 100);
+        Integer totalScore = 0;
         
-        return totalScore;
+        // Calculate score based on metrics
+        for (ACME_Lead_Scoring_Metric__c metric : metrics) {
+            // Apply scoring logic per metric
+            totalScore += calculateMetricScore(lead, metric);
+        }
+        
+        // Ensure score is between 1-100
+        return Math.min(Math.max(totalScore, 1), 100);
     }
-    
+
     /**
-     * Calculate engagement points for a lead
-     * @param lead The lead to evaluate
-     * @return Engagement points
+     * Calculates score for a specific metric
+     * @param lead The lead record
+     * @param metric The scoring metric to apply
+     * @return Integer score for the specific metric
      */
-    private static Decimal calculateEngagementPoints(Lead lead) {
-        Decimal points = 0;
-        
-        // Example engagement scoring logic
-        if (lead.HasOptedOutOfEmail == false) {
-            points += 10;
+    private static Integer calculateMetricScore(Lead lead, ACME_Lead_Scoring_Metric__c metric) {
+        Integer metricScore = 0;
+
+        // Example scoring logic - customize as needed
+        if (metric.Category__c == 'Engagement') {
+            if (lead.NumberOfEmployees != null && lead.NumberOfEmployees > 100) {
+                metricScore += metric.Weight__c.intValue();
+            }
+        } else if (metric.Category__c == 'Demographics') {
+            if (String.isNotBlank(lead.LeadSource)) {
+                metricScore += metric.Weight__c.intValue();
+            }
         }
-        
-        if (lead.NumberOfEmployees != null && lead.NumberOfEmployees > 50) {
-            points += 20;
-        }
-        
-        return points;
+
+        return metricScore;
     }
-    
+
     /**
-     * Calculate demographic points for a lead
-     * @param lead The lead to evaluate
-     * @return Demographic points
-     */
-    private static Decimal calculateDemographicPoints(Lead lead) {
-        Decimal points = 0;
-        
-        // Example demographic scoring logic
-        if (String.isNotBlank(lead.Title)) {
-            points += 15;
-        }
-        
-        if (String.isNotBlank(lead.Company)) {
-            points += 15;
-        }
-        
-        return points;
-    }
-    
-    /**
-     * Update lead score and related fields
-     * @param leads List of leads to update
+     * Bulk update lead scores
+     * @param leads List of leads to update with scores
      */
     public static void updateLeadScores(List<Lead> leads) {
         List<Lead> leadsToUpdate = new List<Lead>();
-        
+
+        // Check for update access to Lead object
+        if (!Schema.SObjectType.Lead.isUpdateable()) {
+            throw new System.NoAccessException('No update access to Lead object');
+        }
+
         for (Lead lead : leads) {
-            if (Schema.SObjectType.Lead.fields.ACME_Lead_Score__c.isUpdateable()) {
-                lead.ACME_Lead_Score__c = calculateLeadScore(lead);
-                lead.ACME_Lead_Score_Last_Updated__c = System.now();
+            Integer score = calculateLeadScore(lead);
+            
+            // Only create update if score is different
+            if (lead.ACME_Lead_Score__c != score) {
+                lead.ACME_Lead_Score__c = score;
                 leadsToUpdate.add(lead);
             }
         }
-        
+
+        // Perform bulk update
         if (!leadsToUpdate.isEmpty()) {
             update leadsToUpdate;
         }
