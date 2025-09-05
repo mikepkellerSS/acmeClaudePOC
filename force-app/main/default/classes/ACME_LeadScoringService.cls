@@ -1,55 +1,87 @@
 /**
- * Service class for calculating lead scores based on engagement and demographics
+ * Service class for calculating lead scores based on predefined metrics
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * Calculate lead score based on engagement and demographics
-     * 
-     * @param leadRecord Lead record to score
-     * @return Integer score between 0-100
+     * Calculates the lead score based on active scoring metrics
+     * @param lead The lead record to score
+     * @return Integer representing the calculated lead score
      */
-    public static Integer calculateLeadScore(Lead leadRecord) {
-        // Ensure we have read access to lead fields
-        if (!Schema.sObjectType.Lead.isAccessible()) {
-            throw new System.NoAccessException('No access to Lead object');
+    public static Integer calculateLeadScore(Lead lead) {
+        // Check for read access to Lead Scoring Metrics
+        if (!Schema.SObjectType.ACME_Lead_Scoring_Metric__c.isAccessible()) {
+            throw new System.NoAccessException('No access to Lead Scoring Metrics');
         }
 
-        Integer score = 0;
+        // Retrieve active scoring metrics
+        List<ACME_Lead_Scoring_Metric__c> metrics = [
+            SELECT Name__c, Weight__c, Category__c 
+            FROM ACME_Lead_Scoring_Metric__c 
+            WHERE Active__c = true 
+            WITH SECURITY_ENFORCED
+        ];
         
-        // Scoring logic with explicit null checks
-        if (String.isNotBlank(leadRecord.Email)) {
-            score += 20;
+        Integer totalScore = 0;
+        
+        // Calculate score based on metrics
+        for (ACME_Lead_Scoring_Metric__c metric : metrics) {
+            // Apply scoring logic per metric
+            totalScore += calculateMetricScore(lead, metric);
         }
         
-        if (String.isNotBlank(leadRecord.Company)) {
-            score += 15;
-        }
-        
-        if (leadRecord.LeadSource == 'Marketing Campaign') {
-            score += 25;
-        }
-        
-        // Limit score between 0-100
-        return Math.min(Math.max(score, 0), 100);
+        // Ensure score is between 1-100
+        return Math.min(Math.max(totalScore, 1), 100);
     }
 
     /**
-     * Bulk lead scoring method for batch processing
-     * 
-     * @param leads List of leads to score
-     * @return List of scored leads
+     * Calculates score for a specific metric
+     * @param lead The lead record
+     * @param metric The scoring metric to apply
+     * @return Integer score for the specific metric
      */
-    public static List<Lead> scoreBulkLeads(List<Lead> leads) {
-        List<Lead> scoredLeads = new List<Lead>();
-        
+    private static Integer calculateMetricScore(Lead lead, ACME_Lead_Scoring_Metric__c metric) {
+        Integer metricScore = 0;
+
+        // Example scoring logic - customize as needed
+        if (metric.Category__c == 'Engagement') {
+            if (lead.NumberOfEmployees != null && lead.NumberOfEmployees > 100) {
+                metricScore += metric.Weight__c.intValue();
+            }
+        } else if (metric.Category__c == 'Demographics') {
+            if (String.isNotBlank(lead.LeadSource)) {
+                metricScore += metric.Weight__c.intValue();
+            }
+        }
+
+        return metricScore;
+    }
+
+    /**
+     * Bulk update lead scores
+     * @param leads List of leads to update with scores
+     */
+    public static void updateLeadScores(List<Lead> leads) {
+        List<Lead> leadsToUpdate = new List<Lead>();
+
+        // Check for update access to Lead object
+        if (!Schema.SObjectType.Lead.isUpdateable()) {
+            throw new System.NoAccessException('No update access to Lead object');
+        }
+
         for (Lead lead : leads) {
             Integer score = calculateLeadScore(lead);
-            lead.ACME_Lead_Score__c = score;
-            lead.ACME_Last_Scored_Date__c = System.now();
-            scoredLeads.add(lead);
+            
+            // Only create update if score is different
+            if (lead.ACME_Lead_Score__c != score) {
+                lead.ACME_Lead_Score__c = score;
+                leadsToUpdate.add(lead);
+            }
         }
-        
-        return scoredLeads;
+
+        // Perform bulk update
+        if (!leadsToUpdate.isEmpty()) {
+            update leadsToUpdate;
+        }
     }
 }
