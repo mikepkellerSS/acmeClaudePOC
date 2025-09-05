@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <decisions>
+        <name>Check_Lead_Changes</name>
+        <label>Check Lead Changes</label>
+        <locationX>176</locationX>
+        <locationY>311</locationY>
+        <defaultConnector>
+            <targetReference>Recalculate_Lead_Score</targetReference>
+        </defaultConnector>
+        <rules>
+            <name>Significant_Changes</name>
+            <conditionLogic>or</conditionLogic>
+            <conditions>
+                <leftValueReference>$Record.Email</leftValueReference>
+                <operator>IsChanged</operator>
+                <rightValue>
+                    <booleanValue>true</booleanValue>
+                </rightValue>
+            </conditions>
+        </rules>
+    </decisions>
+    <interviewLabel>ACME Lead Scoring Flow</interviewLabel>
+    <label>ACME Lead Scoring Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>AutoLaunchedFlow</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>Check_Lead_Changes</targetReference>
+        </connector>
+        <object>Lead</object>
+        <trigger>onAllChanges</trigger>
+    </start>
+    <steps>
+        <name>Recalculate_Lead_Score</name>
+        <label>Recalculate Lead Score</label>
+        <apexClass>ACME_LeadScoringService</apexClass>
+        <connector>
+            <targetReference>End</targetReference>
+        </connector>
+        <methodName>calculateLeadScoreInvocable</methodName>
+        <methodParameters>
+            <name>leadIds</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </methodParameters>
+    </steps>
+    <status>Active</status>
+</Flow>
