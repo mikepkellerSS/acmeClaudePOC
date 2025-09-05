@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
-        <members>ACMELeadScoringService</members>
-        <members>ACMELeadScoringServiceTest</members>
+        <members>ACME_LeadScoring_Service</members>
+        <members>ACME_LeadScoring_Service_Test</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>ACMELeadTrigger</members>
+        <members>ACME_LeadScoring_Trigger</members>
         <name>ApexTrigger</name>
     </types>
     <types>
-        <members>Lead.ACME_Lead_Score__c</members>
+        <members>ACME_LeadScoreModel__c.Metric_Name__c</members>
+        <members>ACME_LeadScoreModel__c.Weight__c</members>
+        <members>ACME_LeadScoreModel__c.Active__c</members>
+        <members>Lead.ACME_LeadScore__c</members>
+        <members>Lead.ACME_ScoringLastUpdated__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
