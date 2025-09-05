@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <description>Trigger lead scoring calculation</description>
+    <interviewLabel>Lead Scoring Flow</interviewLabel>
+    <label>ACME Lead Scoring Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>AutoLaunchedFlow</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>Calculate_Lead_Scores</targetReference>
+        </connector>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <actionGroups>
+        <actionGroup>
+            <action>
+                <processMetadataValues>
+                    <name>apexClass</name>
+                    <value>
+                        <stringValue>ACME_LeadScoringService</stringValue>
+                    </value>
+                </processMetadataValues>
+                <name>Calculate_Lead_Scores</name>
+                <type>apex</type>
+            </action>
+        </actionGroup>
+    </actionGroups>
+    <status>Active</status>
+</Flow>
