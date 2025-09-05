@@ -94,15 +94,15 @@ jobs:
           if: always()
           uses: actions/github-script@v6
           with:
-            script: |
-              const outcome = '${{ steps.deploy.outcome }}';
-              const body = outcome === 'success' 
-                ? '✅ Scratch org validation passed!'
-                : '⚠️ Scratch org validation skipped (no DevHub auth configured)';
-
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.name,
-                body: body
-              });
+           script: |
+            const outcome = '${{ steps.deploy.outcome }}';
+            const body = outcome === 'success' 
+              ? '✅ Scratch org validation passed!'
+              : '⚠️ Scratch org validation skipped (no DevHub auth configured)';
+    
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,  // This was missing 'repo'
+              body: body
+            });
