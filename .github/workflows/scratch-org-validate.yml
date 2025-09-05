@@ -79,6 +79,28 @@ jobs:
           run: |
             sf project deploy start -o scratch-org -w 20
 
+        - name: Report validation results to Replit
+          if: always()
+          run: |
+            if [ "${{ steps.deploy.outcome }}" == "success" ]; then
+              curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "success": true,
+                  "storyId": "${{ github.event.pull_request.head.ref }}",
+                  "prNumber": "${{ github.event.pull_request.number }}"
+                }'
+            else
+              curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
+                -H "Content-Type: application/json" \
+                -d '{
+                  "success": false,
+                  "storyId": "${{ github.event.pull_request.head.ref }}",
+                  "prNumber": "${{ github.event.pull_request.number }}",
+                  "errors": "Deployment failed - check GitHub Actions logs"
+                }'
+            fi
+
         - name: Run Tests
           if: steps.deploy.outcome == 'success'
           continue-on-error: true
