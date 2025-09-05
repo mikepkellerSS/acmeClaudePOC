@@ -1,55 +1,81 @@
 /**
- * Service class for calculating lead scores based on engagement and demographics
+ * Service class for lead scoring calculations and management
+ * Implements secure, modular lead scoring logic
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * Calculate lead score based on engagement and demographics
-     * 
-     * @param leadRecord Lead record to score
-     * @return Integer score between 0-100
+     * Calculate lead score based on predefined criteria
+     * @param lead The lead to score
+     * @return Calculated lead score
      */
-    public static Integer calculateLeadScore(Lead leadRecord) {
-        // Ensure we have read access to lead fields
-        if (!Schema.sObjectType.Lead.isAccessible()) {
-            throw new System.NoAccessException('No access to Lead object');
-        }
-
-        Integer score = 0;
+    public static Decimal calculateLeadScore(Lead lead) {
+        Decimal engagementPoints = calculateEngagementPoints(lead);
+        Decimal demographicPoints = calculateDemographicPoints(lead);
         
-        // Scoring logic with explicit null checks
-        if (String.isNotBlank(leadRecord.Email)) {
-            score += 20;
-        }
+        Decimal totalScore = engagementPoints + demographicPoints;
+        totalScore = Math.min(Math.max(totalScore, 0), 100);
         
-        if (String.isNotBlank(leadRecord.Company)) {
-            score += 15;
-        }
-        
-        if (leadRecord.LeadSource == 'Marketing Campaign') {
-            score += 25;
-        }
-        
-        // Limit score between 0-100
-        return Math.min(Math.max(score, 0), 100);
+        return totalScore;
     }
-
+    
     /**
-     * Bulk lead scoring method for batch processing
-     * 
-     * @param leads List of leads to score
-     * @return List of scored leads
+     * Calculate engagement points for a lead
+     * @param lead The lead to evaluate
+     * @return Engagement points
      */
-    public static List<Lead> scoreBulkLeads(List<Lead> leads) {
-        List<Lead> scoredLeads = new List<Lead>();
+    private static Decimal calculateEngagementPoints(Lead lead) {
+        Decimal points = 0;
+        
+        // Example engagement scoring logic
+        if (lead.HasOptedOutOfEmail == false) {
+            points += 10;
+        }
+        
+        if (lead.NumberOfEmployees != null && lead.NumberOfEmployees > 50) {
+            points += 20;
+        }
+        
+        return points;
+    }
+    
+    /**
+     * Calculate demographic points for a lead
+     * @param lead The lead to evaluate
+     * @return Demographic points
+     */
+    private static Decimal calculateDemographicPoints(Lead lead) {
+        Decimal points = 0;
+        
+        // Example demographic scoring logic
+        if (String.isNotBlank(lead.Title)) {
+            points += 15;
+        }
+        
+        if (String.isNotBlank(lead.Company)) {
+            points += 15;
+        }
+        
+        return points;
+    }
+    
+    /**
+     * Update lead score and related fields
+     * @param leads List of leads to update
+     */
+    public static void updateLeadScores(List<Lead> leads) {
+        List<Lead> leadsToUpdate = new List<Lead>();
         
         for (Lead lead : leads) {
-            Integer score = calculateLeadScore(lead);
-            lead.ACME_Lead_Score__c = score;
-            lead.ACME_Last_Scored_Date__c = System.now();
-            scoredLeads.add(lead);
+            if (Schema.SObjectType.Lead.fields.ACME_Lead_Score__c.isUpdateable()) {
+                lead.ACME_Lead_Score__c = calculateLeadScore(lead);
+                lead.ACME_Lead_Score_Last_Updated__c = System.now();
+                leadsToUpdate.add(lead);
+            }
         }
         
-        return scoredLeads;
+        if (!leadsToUpdate.isEmpty()) {
+            update leadsToUpdate;
+        }
     }
 }
