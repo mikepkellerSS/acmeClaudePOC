@@ -90,14 +90,29 @@ jobs:
         - name: Deploy to Scratch Org
           if: steps.create-org.outputs.org_created == 'true'
           id: deploy
-          continue-on-error: true
           run: |
+            echo "Starting deployment to scratch org..."
             sf project deploy start -o scratch-org -w 20 2>&1 | tee deploy-output.txt
+            DEPLOY_EXIT_CODE=${PIPESTATUS[0]}
+            
+            # Check for deployment errors in the output
+            if [ $DEPLOY_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy-output.txt || grep -q "Component errors" deploy-output.txt; then
+              echo "deploy_success=false" >> $GITHUB_OUTPUT
+              echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
+              
+              # Extract specific errors for reporting
+              ERRORS=$(grep -A 5 -E "Error:|Failed:|Component errors|No such column|Field does not exist|Variable does not exist" deploy-output.txt | head -20 | tr '\n' ' ' | sed 's/"/\\"/g')
+              echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
+            else
+              echo "deploy_success=true" >> $GITHUB_OUTPUT
+              echo "Deployment succeeded!"
+            fi
 
         - name: Report validation results to Replit
           if: always()
           run: |
-            if [ "${{ steps.deploy.outcome }}" == "success" ]; then
+            if [ "${{ steps.deploy.outputs.deploy_success }}" == "true" ]; then
+              echo "Reporting success to Replit..."
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
                 -d '{
@@ -106,9 +121,17 @@ jobs:
                   "prNumber": "${{ github.event.pull_request.number }}"
                 }'
             else
-              DEPLOY_ERROR="Deployment failed - check GitHub Actions logs"
-              if [ -f deploy-output.txt ]; then
-                DEPLOY_ERROR=$(grep -E "Error|Failed|error|failed" deploy-output.txt | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed")
+              echo "Reporting failure to Replit..."
+              DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
+              
+              # Fallback if no specific errors captured
+              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.txt ]; then
+                DEPLOY_ERROR=$(tail -20 deploy-output.txt | grep -E "Error|Failed|error|failed" | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed - check GitHub Actions logs")
+              fi
+              
+              # Default message if still no errors
+              if [ -z "$DEPLOY_ERROR" ]; then
+                DEPLOY_ERROR="Deployment failed - check GitHub Actions logs for details"
               fi
               
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
@@ -122,7 +145,7 @@ jobs:
             fi
 
         - name: Run Tests
-          if: steps.deploy.outcome == 'success'
+          if: steps.deploy.outputs.deploy_success == 'true'
           continue-on-error: true
           run: |
             sf apex test run -o scratch-org -w 10 -r human
@@ -138,13 +161,19 @@ jobs:
           with:
            script: |
             let body = '⚠️ Validation status unknown';
+            const deployErrors = '${{ steps.deploy.outputs.deploy_errors }}';
 
               if ('${{ steps.create-org.outputs.org_created }}' !== 'true') {
                 body = '⚠️ Scratch org creation failed or skipped';
-              } else if ('${{ steps.deploy.outcome }}' === 'success') {
+              } else if ('${{ steps.deploy.outputs.deploy_success }}' === 'true') {
                 body = '✅ Scratch org validation passed!';
-              } else if ('${{ steps.deploy.outcome }}' === 'failure') {
-                body = '❌ Deployment to scratch org failed';
+              } else if ('${{ steps.deploy.outputs.deploy_success }}' === 'false') {
+                body = '❌ Deployment to scratch org failed\n\n';
+                if (deployErrors) {
+                  body += '**Errors:**\n```\n' + deployErrors.substring(0, 500) + '\n```';
+                } else {
+                  body += 'Check the Actions tab for detailed error logs.';
+                }
               } else {
                 body = '⚠️ Deployment skipped or had issues';
               }
