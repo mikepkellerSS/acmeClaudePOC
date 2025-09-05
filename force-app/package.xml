@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-      <types>
-          <members>ACME_LeadScoreCalculator</members>
-          <members>ACME_LeadScoreCalculator_Test</members>
-          <members>ACME_LeadScoreHandler</members>
-          <members>ACME_LeadScoreService</members>
-          <name>ApexClass</name>
-      </types>
-      <types>
-          <members>ACME_Lead_Score_Update_Flow</members>
-          <name>Flow</name>
-      </types>
-      <types>
-          <members>Lead.ACME_Score__c</members>
-          <members>Lead.ACME_Score_Last_Updated__c</members>
-          <name>CustomField</name>
-      </types>
-      <version>59.0</version>
-  </Package>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ACME_LeadScoringService</members>
+        <members>ACME_LeadScoringService_Test</members>
+        <members>ACME_LeadScoringBatch</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>ACME_Lead_Scoring_Flow</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Lead.ACME_Lead_Score__c</members>
+        <members>Lead.ACME_Last_Scored_Date__c</members>
+        <name>CustomField</name>
+    </types>
+    <version>59.0</version>
+</Package>
