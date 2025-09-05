@@ -1,51 +1,41 @@
 public with sharing class ACME_LeadScoringService {
-    // Custom Metadata Type for Scoring Configuration
-    private static final List<Lead_Scoring_Criteria__mdt> scoringCriteria = 
-        Lead_Scoring_Criteria__mdt.getAll().values();
-
-    public static void calculateLeadScore(List<Lead> leads) {
+    public static void calculateLeadScores(List<Lead> leads) {
+        List<Lead> leadsToScore = filterLeadsForScoring(leads);
+        
+        if (leadsToScore.isEmpty()) {
+            return;
+        }
+        
+        ACME_LeadScoreCalculator calculator = new ACME_LeadScoreCalculator();
+        
+        for (Lead lead : leadsToScore) {
+            try {
+                lead.ACME_Lead_Score__c = calculator.calculateLeadScore(lead);
+                lead.ACME_Last_Score_Calculation__c = System.now();
+            } catch (Exception e) {
+                // Log error, but continue processing other leads
+                System.debug('Error scoring lead: ' + e.getMessage());
+            }
+        }
+        
+        update leadsToScore;
+    }
+    
+    private static List<Lead> filterLeadsForScoring(List<Lead> leads) {
+        List<Lead> eligibleLeads = new List<Lead>();
+        
         for (Lead lead : leads) {
-            Integer totalScore = calculateDemographicScore(lead) + 
-                                 calculateEngagementScore(lead);
-            
-            lead.ACME_Lead_Score__c = Math.min(Math.max(totalScore, 0), 100);
-            lead.ACME_Last_Score_Calculation__c = System.now();
+            if (isEligibleForScoring(lead)) {
+                eligibleLeads.add(lead);
+            }
         }
+        
+        return eligibleLeads;
     }
-
-    private static Integer calculateDemographicScore(Lead lead) {
-        Integer demographicScore = 0;
-        
-        // Example demographic scoring logic
-        if (String.isNotBlank(lead.Company)) {
-            demographicScore += 10;
-        }
-        
-        if (String.isNotBlank(lead.Title)) {
-            demographicScore += 10;
-        }
-        
-        return demographicScore;
-    }
-
-    private static Integer calculateEngagementScore(Lead lead) {
-        Integer engagementScore = 0;
-        
-        // Example engagement scoring logic
-        if (lead.NumberOfEmployees != null && lead.NumberOfEmployees > 100) {
-            engagementScore += 30;
-        }
-        
-        if (lead.Email != null) {
-            engagementScore += 50;
-        }
-        
-        return engagementScore;
-    }
-
-    @InvocableMethod(label='Calculate Lead Score')
-    public static void invocableCalculateLeadScore(List<Lead> leads) {
-        calculateLeadScore(leads);
-        update leads;
+    
+    private static Boolean isEligibleForScoring(Lead lead) {
+        // Add your specific eligibility criteria
+        return lead.IsConverted == false && 
+               lead.Status != 'Disqualified';
     }
 }
