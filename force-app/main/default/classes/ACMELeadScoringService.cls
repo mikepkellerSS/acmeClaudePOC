@@ -1,112 +1,89 @@
 /**
- * @description Lead scoring service for calculating and managing lead scores
- * @author Studio Science
- * @date 2024-03-15
+ * Service class for calculating and updating lead scores
  */
 public with sharing class ACMELeadScoringService {
-    
+    private static final Integer MAX_SCORE = 100;
+    private static final Integer ENGAGEMENT_MAX = 50;
+    private static final Integer DEMOGRAPHIC_MAX = 50;
+
+    private ACMELeadScoringSelector leadSelector;
+
+    public ACMELeadScoringService() {
+        this.leadSelector = new ACMELeadScoringSelector();
+    }
+
     /**
-     * Calculate lead score based on engagement and demographics
-     * @param leadRecord Lead record to score
-     * @return Integer Lead score between 1-100
+     * Calculate lead score for given lead records
+     * @param leadIds Set of lead record ids to score
+     * @return Map of lead id to calculated score
      */
-    public static Integer calculateLeadScore(Lead leadRecord) {
-        // Secure implementation with FLS checks
-        Integer score = 0;
+    public Map<Id, Decimal> calculateLeadScores(Set<Id> leadIds) {
+        Map<Id, Decimal> leadScores = new Map<Id, Decimal>();
         
-        try {
-            // Retrieve scoring criteria from custom metadata
-            List<ACME_Scoring_Configuration__mdt> scoringCriteria = 
-                [SELECT MasterLabel, ACME_Weight__c 
-                 FROM ACME_Scoring_Configuration__mdt 
-                 WITH SECURITY_ENFORCED];
+        List<Lead> leads = leadSelector.getLeadsForScoring(leadIds);
+        
+        for (Lead lead : leads) {
+            Decimal engagementPoints = calculateEngagementPoints(lead);
+            Decimal demographicPoints = calculateDemographicPoints(lead);
             
-            // Dynamic scoring calculation
-            for (ACME_Scoring_Configuration__mdt criteria : scoringCriteria) {
-                // Example scoring logic - customize based on specific requirements
-                if (criteria.MasterLabel == 'Company_Size') {
-                    score += calculateCompanySizeScore(leadRecord, criteria.ACME_Weight__c);
-                } else if (criteria.MasterLabel == 'Industry') {
-                    score += calculateIndustryScore(leadRecord, criteria.ACME_Weight__c);
-                } else if (criteria.MasterLabel == 'Engagement') {
-                    score += calculateEngagementScore(leadRecord, criteria.ACME_Weight__c);
-                }
-            }
+            Decimal totalScore = Math.min(engagementPoints + demographicPoints, MAX_SCORE);
             
-            // Ensure score is between 1 and 100
-            return Math.min(Math.max(score, 1), 100);
-        } catch (Exception e) {
-            // Log error and return minimum score
-            System.debug('Lead Scoring Error: ' + e.getMessage());
-            return 1;
+            leadScores.put(lead.Id, totalScore);
         }
+        
+        return leadScores;
     }
-    
-    /**
-     * Calculate score based on company size
-     * @param lead Lead record
-     * @param weight Scoring weight
-     * @return Integer Calculated score component
-     */
-    private static Integer calculateCompanySizeScore(Lead lead, Decimal weight) {
-        if (lead.NumberOfEmployees == null) return 0;
+
+    private Decimal calculateEngagementPoints(Lead lead) {
+        // Sample engagement scoring logic
+        Decimal points = 0;
         
-        Integer employeeCount = lead.NumberOfEmployees;
-        if (employeeCount >= 1000) return (Integer)(weight * 100);
-        if (employeeCount >= 500) return (Integer)(weight * 75);
-        if (employeeCount >= 100) return (Integer)(weight * 50);
-        if (employeeCount >= 50) return (Integer)(weight * 25);
-        return (Integer)(weight * 10);
+        if (lead.ACME_Engagement_Points__c != null) {
+            points = lead.ACME_Engagement_Points__c;
+        }
+        
+        return Math.min(points, ENGAGEMENT_MAX);
     }
-    
-    /**
-     * Calculate score based on industry
-     * @param lead Lead record
-     * @param weight Scoring weight
-     * @return Integer Calculated score component
-     */
-    private static Integer calculateIndustryScore(Lead lead, Decimal weight) {
-        Set<String> priorityIndustries = new Set<String>{
-            'Technology', 'Finance', 'Healthcare', 'Manufacturing'
-        };
+
+    private Decimal calculateDemographicPoints(Lead lead) {
+        // Sample demographic scoring logic
+        Decimal points = 0;
         
-        if (String.isBlank(lead.Industry)) return 0;
+        if (lead.NumberOfEmployees != null) {
+            points += lead.NumberOfEmployees >= 1000 ? 20 : 
+                      lead.NumberOfEmployees >= 100 ? 10 : 5;
+        }
         
-        return priorityIndustries.contains(lead.Industry) 
-            ? (Integer)(weight * 100) 
-            : (Integer)(weight * 25);
+        if (lead.Industry != null) {
+            points += lead.Industry == 'Technology' ? 15 : 
+                      lead.Industry == 'Finance' ? 10 : 5;
+        }
+        
+        return Math.min(points, DEMOGRAPHIC_MAX);
     }
-    
+
     /**
-     * Calculate score based on engagement
-     * @param lead Lead record
-     * @param weight Scoring weight
-     * @return Integer Calculated score component
+     * Update lead scores in bulk
+     * @param leadScores Map of lead id to calculated score
      */
-    private static Integer calculateEngagementScore(Lead lead, Decimal weight) {
-        Integer engagementScore = 0;
+    public void updateLeadScores(Map<Id, Decimal> leadScores) {
+        if (leadScores == null || leadScores.isEmpty()) {
+            return;
+        }
+
+        List<Lead> leadsToUpdate = new List<Lead>();
         
-        // Example engagement factors
-        if (lead.HasOptedOutOfEmail == false) engagementScore += 25;
-        if (lead.Email != null) engagementScore += 25;
-        if (lead.Phone != null) engagementScore += 25;
+        for (Id leadId : leadScores.keySet()) {
+            Lead leadToUpdate = new Lead(
+                Id = leadId,
+                ACME_Lead_Score__c = leadScores.get(leadId),
+                ACME_Score_Last_Updated__c = System.now()
+            );
+            leadsToUpdate.add(leadToUpdate);
+        }
         
-        return (Integer)(engagementScore * weight);
-    }
-    
-    /**
-     * Update lead score on the lead record
-     * @param leadId ID of the lead to update
-     * @param score Calculated lead score
-     */
-    public static void updateLeadScore(Id leadId, Integer score) {
-        // Perform update with system context to bypass sharing rules
-        Lead leadToUpdate = new Lead(
-            Id = leadId, 
-            ACME_Lead_Score__c = score
-        );
-        
-        // Perform update with system context
-        Database.update(leadToUpdate, false);
+        if (!leadsToUpdate.isEmpty()) {
+            Database.update(leadsToUpdate, false);
+        }
     }
 }
