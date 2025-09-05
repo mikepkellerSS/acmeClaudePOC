@@ -60,14 +60,24 @@ jobs:
         - name: Authenticate Dev Hub (if secret exists)
           if: env.DEVHUB_AUTH_URL != ''
           run: |
-              echo "DevHub URL length: ${#DEVHUB_AUTH_URL}"
-                if [ -z "$DEVHUB_AUTH_URL" ]; then
-                  echo "ERROR: DEVHUB_AUTH_URL is empty"
-                  exit 1
-                fi
-                echo "${{ env.DEVHUB_AUTH_URL }}" > auth.txt
-                sf org login sfdx-url -f auth.txt -a devhub -d
-                rm auth.txt
+            echo "Authenticating to DevHub..."
+            echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
+
+            # Try to authenticate and set as DevHub
+            sf org login sfdx-url --sfdx-url-file auth-url.txt --alias devhub --set-default-dev-hub
+
+            # Verify it's a DevHub
+            sf org display --target-org devhub --json > org-info.json
+            cat org-info.json
+
+            # Check if DevHub is enabled
+            if ! grep -q '"isDevHub":true' org-info.json; then
+              echo "ERROR: Authenticated org is not a DevHub. Enabling DevHub..."
+              # Try to enable DevHub (this might not work depending on org type)
+              sf org open --target-org devhub --path /lightning/setup/DevHub/home
+            fi
+
+            rm auth-url.txt org-info.json
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
