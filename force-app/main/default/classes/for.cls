@@ -1,87 +1,105 @@
 /**
- * @description Service class for calculating and managing lead scoring logic
- * @author Studio Science
- * @date 2025-09-05
+ * Service class for lead scoring calculations
+ * Implements complex scoring logic across multiple dimensions
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * @description Calculates lead scores based on predefined criteria
-     * @param leads List of leads to be scored
+     * Calculate lead score based on multiple factors
+     * @param lead The lead record to score
+     * @return Calculated lead score between 0-100
      */
-    public static void calculateLeadScore(List<Lead> leads) {
-        // Validate input
-        if (leads == null || leads.isEmpty()) {
-            return;
-        }
-
-        // Perform security checks
-        if (!Schema.sObjectType.Lead.isAccessible()) {
-            throw new System.NoAccessException('Insufficient lead object access');
-        }
-
-        // Core scoring logic
-        for (Lead lead : leads) {
-            Integer score = calculateIndividualLeadScore(lead);
-            
-            // Update lead score with security checks
-            if (Schema.sObjectType.Lead.fields.ACME_Lead_Score__c.isUpdateable()) {
-                lead.ACME_Lead_Score__c = score;
-            }
-        }
-    }
-
-    /**
-     * @description Calculates individual lead score based on multiple factors
-     * @param lead Individual lead to be scored
-     * @return Integer representing lead score (0-100)
-     */
-    private static Integer calculateIndividualLeadScore(Lead lead) {
-        Integer score = 0;
-
+    public static Decimal calculateLeadScore(Lead lead) {
+        Decimal score = 0;
+        
         // Demographic scoring
         score += calculateDemographicScore(lead);
-
+        
         // Engagement scoring
         score += calculateEngagementScore(lead);
-
+        
         // Ensure score is within 0-100 range
         return Math.min(Math.max(score, 0), 100);
     }
-
+    
     /**
-     * @description Calculates demographic-based lead score
-     * @param lead Lead to evaluate
-     * @return Integer demographic score component
+     * Calculate score based on demographic factors
+     * @param lead Lead record to assess
+     * @return Demographic score component
      */
-    private static Integer calculateDemographicScore(Lead lead) {
-        Integer demographicScore = 0;
-
-        // Example demographic scoring logic
-        if (String.isNotBlank(lead.Company)) {
-            demographicScore += 20;
+    private static Decimal calculateDemographicScore(Lead lead) {
+        Decimal demographicScore = 0;
+        
+        // Industry scoring
+        if (String.isNotBlank(lead.Industry)) {
+            switch on lead.Industry.toLowerCase() {
+                when 'technology', 'finance' {
+                    demographicScore += 30;
+                }
+                when 'healthcare', 'education' {
+                    demographicScore += 20;
+                }
+                when else {
+                    demographicScore += 10;
+                }
+            }
         }
-
-        if (String.isNotBlank(lead.Title)) {
-            demographicScore += 15;
+        
+        // Company size scoring
+        if (lead.NumberOfEmployees != null) {
+            if (lead.NumberOfEmployees > 1000) {
+                demographicScore += 25;
+            } else if (lead.NumberOfEmployees > 100) {
+                demographicScore += 15;
+            }
         }
-
+        
         return demographicScore;
     }
-
+    
     /**
-     * @description Calculates engagement-based lead score
-     * @param lead Lead to evaluate
-     * @return Integer engagement score component
+     * Calculate score based on engagement metrics
+     * @param lead Lead record to assess
+     * @return Engagement score component
      */
-    private static Integer calculateEngagementScore(Lead lead) {
-        Integer engagementScore = 0;
-
-        // Example engagement scoring logic
-        if (lead.ACME_Engagement_Frequency__c != null) {
-            engagementScore += Math.min(lead.ACME_Engagement_Frequency__c.intValue() * 5, 30);
+    private static Decimal calculateEngagementScore(Lead lead) {
+        Decimal engagementScore = 0;
+        
+        // Website interactions (hypothetical tracking)
+        if (lead.Website_Visits__c != null) {
+            engagementScore += Math.min(lead.Website_Visits__c * 2, 20);
         }
-
+        
+        // Email interactions (hypothetical tracking)
+        if (lead.Email_Opens__c != null) {
+            engagementScore += Math.min(lead.Email_Opens__c * 1.5, 15);
+        }
+        
         return engagementScore;
+    }
+    
+    /**
+     * Update lead score and last scored date
+     * @param leadId ID of lead to update
+     * @param score Calculated lead score
+     */
+    public static void updateLeadScore(Id leadId, Decimal score) {
+        // Verify user has edit permissions
+        if (!Schema.sObjectType.Lead.isUpdateable()) {
+            throw new System.NoAccessException('Insufficient permissions to update lead');
+        }
+        
+        Lead leadToUpdate = new Lead(
+            Id = leadId,
+            ACME_Lead_Score__c = score,
+            ACME_Last_Scored_Date__c = System.now()
+        );
+        
+        try {
+            update leadToUpdate;
+        } catch (DmlException e) {
+            System.debug(LoggingLevel.ERROR, 'Lead score update failed: ' + e.getMessage());
+            throw e;
+        }
     }
 }
