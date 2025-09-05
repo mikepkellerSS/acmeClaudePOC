@@ -60,9 +60,14 @@ jobs:
         - name: Authenticate Dev Hub (if secret exists)
           if: env.DEVHUB_AUTH_URL != ''
           run: |
-              echo "${{ env.DEVHUB_AUTH_URL }}" > auth.txt
-              sf org login sfdx-url -f auth.txt -a devhub -d
-              rm auth.txt
+              echo "DevHub URL length: ${#DEVHUB_AUTH_URL}"
+                if [ -z "$DEVHUB_AUTH_URL" ]; then
+                  echo "ERROR: DEVHUB_AUTH_URL is empty"
+                  exit 1
+                fi
+                echo "${{ env.DEVHUB_AUTH_URL }}" > auth.txt
+                sf org login sfdx-url -f auth.txt -a devhub -d
+                rm auth.txt
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
@@ -117,14 +122,21 @@ jobs:
           uses: actions/github-script@v6
           with:
            script: |
-            const outcome = '${{ steps.deploy.outcome }}';
-            const body = outcome === 'success' 
-              ? '✅ Scratch org validation passed!'
-              : '⚠️ Scratch org validation skipped (no DevHub auth configured)';
-    
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,  // This was missing 'repo'
-              body: body
-            });
+            let body = '⚠️ Validation status unknown';
+
+              if ('${{ steps.create-org.outputs.org_created }}' !== 'true') {
+                body = '⚠️ Scratch org creation failed or skipped';
+              } else if ('${{ steps.deploy.outcome }}' === 'success') {
+                body = '✅ Scratch org validation passed!';
+              } else if ('${{ steps.deploy.outcome }}' === 'failure') {
+                body = '❌ Deployment to scratch org failed';
+              } else {
+                body = '⚠️ Deployment skipped or had issues';
+              }
+
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: body
+              });
