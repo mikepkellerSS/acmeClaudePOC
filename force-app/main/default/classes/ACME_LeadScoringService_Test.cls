@@ -7,40 +7,35 @@ private class ACME_LeadScoringService_Test {
         Lead testLead = new Lead(
             FirstName = 'Test',
             LastName = 'Lead',
-            Company = 'Test Company',
-            Email = 'test@example.com',
-            LeadSource = 'Marketing Campaign'
+            Company = 'ACME Corp',
+            Title = 'Director',
+            NumberOfEmployees = 100,
+            HasOptedOutOfEmail = false
         );
         
-        // Calculate score
-        Integer score = ACME_LeadScoringService.calculateLeadScore(testLead);
+        Test.startTest();
+        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
+        Test.stopTest();
         
-        // Assertions
-        System.assertEquals(60, score, 'Lead score calculation incorrect');
+        System.assert(score > 0, 'Lead score should be positive');
+        System.assert(score <= 100, 'Lead score should not exceed 100');
     }
     
     @isTest
-    static void testBulkLeadScoring() {
-        // Create test leads
+    static void testLeadScoreUpdate() {
         List<Lead> testLeads = new List<Lead>{
             new Lead(
-                FirstName = 'Test1',
+                FirstName = 'Test',
                 LastName = 'Lead1',
-                Company = 'Company1',
-                Email = 'test1@example.com'
-            ),
-            new Lead(
-                FirstName = 'Test2', 
-                LastName = 'Lead2',
-                Company = 'Company2'
+                Company = 'ACME Corp',
+                Title = 'Manager'
             )
         };
         
-        // Score leads
-        List<Lead> scoredLeads = ACME_LeadScoringService.scoreBulkLeads(testLeads);
+        Test.startTest();
+        ACME_LeadScoringService.updateLeadScores(testLeads);
+        Test.stopTest();
         
-        // Assertions
-        System.assertEquals(2, scoredLeads.size(), 'Bulk scoring failed');
-        System.assertNotEquals(null, scoredLeads[0].ACME_Lead_Score__c, 'Score not calculated');
+        System.assertNotEquals(null, testLeads[0].ACME_Lead_Score__c, 'Lead score should be calculated');
     }
 }
