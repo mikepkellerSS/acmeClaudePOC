@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
-        <members>ACMELeadScoringService</members>
-        <members>ACMELeadScoringServiceTest</members>
+        <members>ACME_LeadScoringService</members>
+        <members>ACME_LeadScoringService_Test</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>ACMELeadTrigger</members>
+        <members>ACME_LeadTrigger</members>
         <name>ApexTrigger</name>
     </types>
     <types>
         <members>Lead.ACME_Lead_Score__c</members>
+        <members>Lead.ACME_Score_Last_Updated__c</members>
+        <members>Lead.Email_Opens__c</members>
+        <members>Lead.Website_Visits__c</members>
+        <members>Lead.Content_Downloads__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
