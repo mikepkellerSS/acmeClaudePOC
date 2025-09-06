@@ -6,11 +6,8 @@
         <name>ApexClass</name>
     </types>
     <types>
-        <members>ACMELeadTrigger</members>
-        <name>ApexTrigger</name>
-    </types>
-    <types>
         <members>Lead.ACME_Lead_Score__c</members>
+        <members>Lead.ACME_Last_Scoring_Date__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
