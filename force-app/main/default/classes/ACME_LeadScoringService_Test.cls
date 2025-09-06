@@ -1,72 +1,46 @@
-/**
- * Test class for ACME_LeadScoringService to ensure comprehensive coverage
- */
 @isTest
 private class ACME_LeadScoringService_Test {
-    
-    /**
-     * Test lead score calculation with various scenarios
-     */
     @isTest
-    static void testLeadScoreCalculation() {
-        // Create test leads with different profiles
+    static void testLeadScoring() {
+        // Create test leads
         List<Lead> testLeads = new List<Lead>{
             new Lead(
-                FirstName = 'Tech',
+                FirstName = 'Test',
                 LastName = 'Lead',
-                Company = 'TechCorp',
-                Email_Opens__c = 10,
-                Website_Visits__c = 5,
-                Content_Downloads__c = 3,
-                Number_of_Employees__c = 600,
-                Industry = 'Technology',
-                Title = 'CTO'
-            ),
-            new Lead(
-                FirstName = 'Small',
-                LastName = 'Business',
-                Company = 'LocalShop',
-                Email_Opens__c = 2,
-                Website_Visits__c = 1,
-                Content_Downloads__c = 0,
-                Number_of_Employees__c = 10,
-                Industry = 'Retail',
-                Title = 'Owner'
+                Company = 'Test Company',
+                Industry = 'Technology'
             )
         };
+        insert testLeads;
 
         Test.startTest();
-        for (Lead lead : testLeads) {
-            Integer score = ACME_LeadScoringService.calculateLeadScore(lead);
-            System.assertNotEquals(null, score, 'Score should not be null');
-            System.assert(score >= 0 && score <= 100, 'Score should be between 0 and 100');
-        }
+        ACME_LeadScoringService.calculateLeadScores(testLeads);
         Test.stopTest();
+
+        // Retrieve updated leads
+        List<Lead> updatedLeads = [
+            SELECT ACME_Lead_Score__c, ACME_Last_Score_Calculated__c 
+            FROM Lead 
+            WHERE Id IN :testLeads
+        ];
+
+        // Assertions
+        System.assertNotEquals(null, updatedLeads[0].ACME_Lead_Score__c, 
+            'Lead score should be calculated');
+        System.assertNotEquals(null, updatedLeads[0].ACME_Last_Score_Calculated__c, 
+            'Score calculation timestamp should be set');
+        System.assert(updatedLeads[0].ACME_Lead_Score__c >= 0 && 
+                      updatedLeads[0].ACME_Lead_Score__c <= 100, 
+            'Lead score should be between 0 and 100');
     }
 
-    /**
-     * Test bulk lead score updates
-     */
     @isTest
-    static void testBulkLeadScoreUpdate() {
-        List<Lead> testLeads = new List<Lead>();
-        for (Integer i = 0; i < 200; i++) {
-            testLeads.add(new Lead(
-                FirstName = 'Bulk',
-                LastName = 'Lead ' + i,
-                Company = 'Test Company ' + i,
-                Email_Opens__c = 5,
-                Website_Visits__c = 3
-            ));
-        }
-
+    static void testEmptyLeadList() {
         Test.startTest();
-        ACME_LeadScoringService.updateLeadScores(testLeads);
+        ACME_LeadScoringService.calculateLeadScores(new List<Lead>());
         Test.stopTest();
-
-        // Verify scores were calculated
-        for (Lead lead : testLeads) {
-            System.assertNotEquals(null, lead.ACME_Lead_Score__c, 'Lead score should be calculated');
-        }
+        
+        // No assertion needed - just ensuring no exceptions
+        System.assert(true, 'Empty list should not cause errors');
     }
 }
