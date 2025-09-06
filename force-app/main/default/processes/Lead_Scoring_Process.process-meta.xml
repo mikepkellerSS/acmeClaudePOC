@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Process xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>52.0</apiVersion>
+    <assignments>
+        <name>Set_Lead_Score</name>
+        <label>Set Lead Score</label>
+        <assignmentItems>
+            <assignToReference>$Record.Lead_Score__c</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>LeadScoreCalculation</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <decisions>
+        <name>Check_Lead_Score</name>
+        <label>Check Lead Score</label>
+        <processConditions>
+            <leftOperand>
+                <elementReference>LeadScoreCalculation</elementReference>
+            </leftOperand>
+            <operator>GreaterThan</operator>
+            <rightOperand>0</rightOperand>
+        </processConditions>
+    </decisions>
+    <formulas>
+        <name>LeadScoreCalculation</name>
+        <dataType>Number</dataType>
+        <expression>ACMELeadScoringService.calculateLeadScore($Record)</expression>
+    </formulas>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <object>Lead</object>
+        <recordTriggerType>CreateAndUpdate</recordTriggerType>
+    </start>
+</Process>
