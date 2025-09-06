@@ -1,56 +1,77 @@
 /**
  * @description Test class for Lead Scoring Service
- * @author Studio Science
- * @date 2025-09-06
+ * @author Acme Corp Development Team
+ * @date 2024-02-15
  */
 @isTest
 private class ACME_LeadScoringService_Test {
     
     @testSetup
     static void setupTestData() {
-        // Create test leads
-        List<Lead> testLeads = new List<Lead>();
-        for (Integer i = 0; i < 10; i++) {
-            testLeads.add(new Lead(
+        // Create test leads with various attributes
+        List<Lead> testLeads = new List<Lead>{
+            new Lead(
                 FirstName = 'Test',
-                LastName = 'Lead ' + i,
-                Company = 'Test Company ' + i,
-                Status = 'Open - Not Contacted'
-            ));
-        }
+                LastName = 'Lead1',
+                Company = 'Acme Corp',
+                Email = 'test1@example.com',
+                LeadSource = 'Web'
+            ),
+            new Lead(
+                FirstName = 'Test',
+                LastName = 'Lead2',
+                Company = 'Another Company',
+                Email = 'test2@example.com',
+                LeadSource = 'Referral'
+            )
+        };
         insert testLeads;
     }
 
     @isTest
-    static void testLeadScoring() {
-        // Retrieve test leads
-        List<Lead> leads = [SELECT Id, Company, ACME_Last_Engagement_Date__c 
-                            FROM Lead 
-                            WHERE LastName LIKE 'Test Lead%'];
-        
-        // Set up some test engagement dates
-        leads[0].ACME_Last_Engagement_Date__c = System.today().addDays(-15);
-        leads[1].ACME_Last_Engagement_Date__c = System.today().addDays(-45);
-        
+    static void testLeadScoreCalculation() {
+        // Retrieve test lead
+        Lead testLead = [SELECT Id, FirstName, LastName, Company, Email, LeadSource 
+                         FROM Lead 
+                         WHERE LastName = 'Lead1' 
+                         LIMIT 1];
+
         Test.startTest();
-        ACME_LeadScoringService.calculateLeadScore(leads);
+        Integer calculatedScore = ACME_LeadScoringService.calculateLeadScore(testLead);
         Test.stopTest();
 
-        // Verify scores are calculated
-        for (Lead lead : leads) {
-            System.assertNotEquals(null, lead.ACME_Lead_Score__c, 
-                'Lead score should be calculated');
-            System.assert(lead.ACME_Lead_Score__c >= 0 && lead.ACME_Lead_Score__c <= 100, 
-                'Lead score should be between 0 and 100');
-        }
+        // Assert score is within valid range
+        System.assert(calculatedScore >= 0 && calculatedScore <= 100, 
+            'Lead score should be between 0 and 100');
     }
 
     @isTest
-    static void testEmptyLeadList() {
+    static void testLeadScoreUpdate() {
+        // Retrieve test lead
+        Lead testLead = [SELECT Id FROM Lead WHERE LastName = 'Lead1' LIMIT 1];
+
         Test.startTest();
-        ACME_LeadScoringService.calculateLeadScore(new List<Lead>());
+        ACME_LeadScoringService.updateLeadScore(testLead.Id, 75);
         Test.stopTest();
-        // Ensure no exception is thrown
-        System.assert(true, 'Empty list should be handled gracefully');
+
+        // Verify lead was updated
+        Lead updatedLead = [SELECT ACME_Lead_Score__c, ACME_Last_Scored_Date__c 
+                             FROM Lead 
+                             WHERE Id = :testLead.Id];
+        
+        System.assertEquals(75, updatedLead.ACME_Lead_Score__c, 
+            'Lead score should be updated correctly');
+        System.assertNotEquals(null, updatedLead.ACME_Last_Scored_Date__c, 
+            'Last scored date should be set');
+    }
+
+    @isTest
+    static void testErrorHandling() {
+        Test.startTest();
+        Integer score = ACME_LeadScoringService.calculateLeadScore(null);
+        Test.stopTest();
+
+        // Verify default behavior for null input
+        System.assertEquals(0, score, 'Null lead should return zero score');
     }
 }
