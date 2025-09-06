@@ -2,17 +2,13 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>ACME_LeadScoringService</members>
+        <members>ACME_LeadScoringLogger</members>
         <members>ACME_LeadScoringService_Test</members>
-        <members>ACME_LeadScoringBatch</members>
-        <members>ACME_LeadScoringBatch_Test</members>
         <name>ApexClass</name>
     </types>
     <types>
         <members>Lead.ACME_Lead_Score__c</members>
-        <members>Lead.ACME_Last_Engagement_Date__c</members>
-        <members>ACME_Scoring_Criteria__mdt.Score_Weight__c</members>
-        <members>ACME_Scoring_Criteria__mdt.Criteria_Type__c</members>
-        <members>ACME_Scoring_Criteria__mdt.IsActive__c</members>
+        <members>Lead.ACME_Last_Scored_Date__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
