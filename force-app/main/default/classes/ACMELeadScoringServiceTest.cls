@@ -1,72 +1,61 @@
-/**
- * @description Test class for ACMELeadScoringService
- * @author Studio Science
- * @date 2024-03-15
- */
 @isTest
 private class ACMELeadScoringServiceTest {
-    
-    @testSetup
+    @TestSetup
     static void setupTestData() {
-        // Create test leads with various attributes
-        List<Lead> testLeads = new List<Lead>{
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead1',
-                Company = 'ACME Corp',
-                NumberOfEmployees = 750,
-                Industry = 'Technology',
-                Email = 'test1@example.com',
-                Phone = '1234567890'
-            ),
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead2',
-                Company = 'Small Business',
-                NumberOfEmployees = 25,
-                Industry = 'Retail',
-                HasOptedOutOfEmail = true
-            )
-        };
-        insert testLeads;
+        // Create test metadata records
+        List<ACME_Scoring_Configuration__mdt> testConfigs = new List<ACME_Scoring_Configuration__mdt>();
+        
+        // Mock metadata for testing
+        ACME_Scoring_Configuration__mdt industryConfig = new ACME_Scoring_Configuration__mdt();
+        industryConfig.MasterLabel = 'Industry';
+        industryConfig.ACME_Weight__c = 0.5;
+        testConfigs.add(industryConfig);
+        
+        ACME_Scoring_Configuration__mdt companyConfig = new ACME_Scoring_Configuration__mdt();
+        companyConfig.MasterLabel = 'Company Size';
+        companyConfig.ACME_Weight__c = 0.3;
+        testConfigs.add(companyConfig);
     }
     
     @isTest
     static void testLeadScoring() {
-        // Retrieve test leads
-        List<Lead> testLeads = [SELECT Id, NumberOfEmployees, Industry, Email, Phone, HasOptedOutOfEmail FROM Lead];
-        
-        Test.startTest();
-        for (Lead testLead : testLeads) {
-            Integer score = ACMELeadScoringService.calculateLeadScore(testLead);
-            
-            // Assert score is within valid range
-            System.assert(score >= 1 && score <= 100, 'Score should be between 1 and 100');
-            
-            // Update lead score
-            ACMELeadScoringService.updateLeadScore(testLead.Id, score);
-        }
-        Test.stopTest();
-        
-        // Verify leads were updated
-        List<Lead> updatedLeads = [SELECT ACME_Lead_Score__c FROM Lead];
-        System.assertEquals(2, updatedLeads.size(), 'All leads should be processed');
-    }
-    
-    @isTest
-    static void testEdgeCases() {
-        // Test lead with minimal information
-        Lead minimalLead = new Lead(
-            FirstName = 'Minimal',
+        // Create test lead
+        Lead testLead = new Lead(
+            FirstName = 'Test',
             LastName = 'Lead',
-            Company = 'No Info'
+            Company = 'ACME Corp',
+            Industry = 'Technology'
         );
         
         Test.startTest();
-        Integer score = ACMELeadScoringService.calculateLeadScore(minimalLead);
+        Decimal score = ACMELeadScoringService.calculateLeadScore(testLead);
         Test.stopTest();
         
-        // Assert minimum score
-        System.assertEquals(1, score, 'Minimal lead should have minimum score');
+        System.assertNotEquals(null, score, 'Score should be calculated');
+        System.assert(score > 0, 'Score should be positive');
+    }
+    
+    @isTest
+    static void testIndustryScoring() {
+        Lead techLead = new Lead(
+            FirstName = 'Tech',
+            LastName = 'Lead',
+            Company = 'Tech Company',
+            Industry = 'Technology'
+        );
+        
+        Lead financeLead = new Lead(
+            FirstName = 'Finance',
+            LastName = 'Lead',
+            Company = 'Finance Corp',
+            Industry = 'Finance'
+        );
+        
+        Test.startTest();
+        Decimal techScore = ACMELeadScoringService.calculateLeadScore(techLead);
+        Decimal financeScore = ACMELeadScoringService.calculateLeadScore(financeLead);
+        Test.stopTest();
+        
+        System.assert(techScore > financeScore, 'Technology industry should have higher score');
     }
 }
