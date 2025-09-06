@@ -5,5 +5,5 @@
     <type>Number</type>
     <precision>3</precision>
     <scale>0</scale>
-    <description>Calculated lead score from 0-100</description>
+    <description>Automated lead scoring value between 0-100</description>
 </CustomField>
