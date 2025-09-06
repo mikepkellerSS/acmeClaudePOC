@@ -1,15 +1,9 @@
-/**
- * @description Trigger to invoke lead scoring on lead creation and update
- * @author Studio Science
- * @date 2024-03-15
- */
-trigger ACMELeadTrigger on Lead (after insert, after update) {
-    // Process leads only in after context
-    if (Trigger.isAfter && (Trigger.isInsert || Trigger.isUpdate)) {
-        for (Lead leadRecord : Trigger.new) {
-            // Calculate and update lead score
-            Integer leadScore = ACMELeadScoringService.calculateLeadScore(leadRecord);
-            ACMELeadScoringService.updateLeadScore(leadRecord.Id, leadScore);
-        }
+trigger ACMELeadTrigger on Lead (before insert, before update) {
+    for (Lead leadRecord : Trigger.new) {
+        // Calculate lead score
+        Decimal score = ACMELeadScoringService.calculateLeadScore(leadRecord);
+        
+        // Optionally set the score on the lead record
+        leadRecord.ACME_Weight__c = score;
     }
 }
