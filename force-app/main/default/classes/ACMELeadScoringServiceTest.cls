@@ -1,72 +1,53 @@
-/**
- * @description Test class for ACMELeadScoringService
- * @author Studio Science
- * @date 2024-03-15
- */
 @isTest
 private class ACMELeadScoringServiceTest {
-    
-    @testSetup
+    @TestSetup
     static void setupTestData() {
-        // Create test leads with various attributes
-        List<Lead> testLeads = new List<Lead>{
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead1',
-                Company = 'ACME Corp',
-                NumberOfEmployees = 750,
-                Industry = 'Technology',
-                Email = 'test1@example.com',
-                Phone = '1234567890'
-            ),
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead2',
-                Company = 'Small Business',
-                NumberOfEmployees = 25,
-                Industry = 'Retail',
-                HasOptedOutOfEmail = true
-            )
-        };
-        insert testLeads;
+        // Create a default scoring configuration
+        List<ACME_Scoring_Configuration__mdt> configs = 
+            [SELECT Id FROM ACME_Scoring_Configuration__mdt WHERE IsActive__c = true];
+        System.assert(!configs.isEmpty(), 'Test requires an active scoring configuration');
     }
     
     @isTest
     static void testLeadScoring() {
-        // Retrieve test leads
-        List<Lead> testLeads = [SELECT Id, NumberOfEmployees, Industry, Email, Phone, HasOptedOutOfEmail FROM Lead];
+        // Create test leads with various attributes
+        List<Lead> testLeads = new List<Lead>{
+            new Lead(
+                FirstName = 'Test', 
+                LastName = 'Lead1', 
+                Email = 'test@example.com',
+                Phone = '1234567890',
+                Company = 'Test Company'
+            ),
+            new Lead(
+                FirstName = 'Test', 
+                LastName = 'Lead2',
+                Email = null,
+                Phone = null,
+                Company = null
+            )
+        };
         
         Test.startTest();
-        for (Lead testLead : testLeads) {
-            Integer score = ACMELeadScoringService.calculateLeadScore(testLead);
-            
-            // Assert score is within valid range
-            System.assert(score >= 1 && score <= 100, 'Score should be between 1 and 100');
-            
-            // Update lead score
-            ACMELeadScoringService.updateLeadScore(testLead.Id, score);
-        }
+        List<Lead> scoredLeads = ACMELeadScoringService.scoreLead(testLeads);
         Test.stopTest();
         
-        // Verify leads were updated
-        List<Lead> updatedLeads = [SELECT ACME_Lead_Score__c FROM Lead];
-        System.assertEquals(2, updatedLeads.size(), 'All leads should be processed');
+        // Assertions
+        System.assertNotEquals(null, scoredLeads[0].Score__c, 'First lead score should be calculated');
+        System.assert(scoredLeads[0].Score__c > 0, 'First lead score should be positive');
+        
+        System.assertNotEquals(null, scoredLeads[1].Score__c, 'Second lead score should be calculated');
+        System.assertEquals(0, scoredLeads[1].Score__c, 'Second lead score should be zero');
     }
     
     @isTest
-    static void testEdgeCases() {
-        // Test lead with minimal information
-        Lead minimalLead = new Lead(
-            FirstName = 'Minimal',
-            LastName = 'Lead',
-            Company = 'No Info'
-        );
+    static void testEmptyLeadList() {
+        List<Lead> emptyLeads = new List<Lead>();
         
         Test.startTest();
-        Integer score = ACMELeadScoringService.calculateLeadScore(minimalLead);
+        List<Lead> result = ACMELeadScoringService.scoreLead(emptyLeads);
         Test.stopTest();
         
-        // Assert minimum score
-        System.assertEquals(1, score, 'Minimal lead should have minimum score');
+        System.assertEquals(0, result.size(), 'Empty list should remain empty');
     }
 }
