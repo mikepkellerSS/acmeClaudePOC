@@ -1,71 +1,87 @@
 /**
- * Lead Scoring Service for automated lead prioritization
+ * @description Lead scoring service for calculating and updating lead scores
  * @author Studio Science
- * @date 2024-03-15
+ * @date 2025-09-06
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * Calculate lead scores for given leads
+     * Calculate lead score based on multiple criteria
      * @param leads List of leads to score
      */
-    public static void calculateLeadScores(List<Lead> leads) {
+    public static void calculateLeadScore(List<Lead> leads) {
+        // Validate input
         if (leads == null || leads.isEmpty()) {
             return;
         }
 
-        List<ACME_Lead_Scoring_Rule__mdt> scoringRules = ACME_LeadScoringRule.getActiveScoringRules();
-        
+        // Retrieve scoring criteria from custom metadata
+        List<ACME_Scoring_Criteria__mdt> scoringCriteria = 
+            [SELECT Label, Score_Weight__c, Criteria_Type__c, Minimum_Threshold__c 
+             FROM ACME_Scoring_Criteria__mdt 
+             WHERE IsActive__c = true];
+
+        // Process each lead
         for (Lead lead : leads) {
-            Integer totalScore = calculateLeadScore(lead, scoringRules);
-            updateLeadScore(lead, totalScore);
-        }
-    }
+            Decimal totalScore = 0;
 
-    /**
-     * Calculate total score for a single lead
-     * @param lead Lead to score
-     * @param scoringRules Active scoring rules
-     * @return Calculated lead score
-     */
-    private static Integer calculateLeadScore(Lead lead, List<ACME_Lead_Scoring_Rule__mdt> scoringRules) {
-        Integer totalScore = 0;
-
-        for (ACME_Lead_Scoring_Rule__mdt rule : scoringRules) {
-            Integer ruleScore = ACME_LeadScoringRule.calculateRuleScore(lead, rule);
-            totalScore += ruleScore;
-        }
-
-        return Math.min(100, Math.max(0, totalScore));
-    }
-
-    /**
-     * Update lead score and timestamp
-     * @param lead Lead to update
-     * @param score Calculated score
-     */
-    private static void updateLeadScore(Lead lead, Integer score) {
-        lead.ACME_Lead_Score__c = score;
-        lead.ACME_Last_Score_Calculated__c = System.now();
-    }
-
-    /**
-     * Queueable version for processing large number of leads
-     */
-    public class LeadScoringQueueable implements Queueable {
-        private List<Lead> leadsToScore;
-
-        public LeadScoringQueueable(List<Lead> leads) {
-            this.leadsToScore = leads;
-        }
-
-        public void execute(QueueableContext context) {
-            calculateLeadScores(leadsToScore);
+            // Calculate demographic score
+            Decimal demographicScore = calculateDemographicScore(lead, scoringCriteria);
             
-            // Optional: Update leads if needed
-            if (!leadsToScore.isEmpty()) {
-                Database.update(leadsToScore, false);
+            // Calculate engagement score
+            Decimal engagementScore = calculateEngagementScore(lead, scoringCriteria);
+
+            // Combine scores
+            totalScore = demographicScore + engagementScore;
+
+            // Ensure score is within 0-100 range
+            lead.ACME_Lead_Score__c = Math.min(Math.max(totalScore, 0), 100);
+        }
+    }
+
+    /**
+     * Calculate demographic score for a lead
+     * @param lead Individual lead to score
+     * @param scoringCriteria List of scoring criteria
+     * @return Demographic score
+     */
+    private static Decimal calculateDemographicScore(Lead lead, List<ACME_Scoring_Criteria__mdt> scoringCriteria) {
+        Decimal demographicScore = 0;
+
+        for (ACME_Scoring_Criteria__mdt criteria : scoringCriteria) {
+            if (criteria.Criteria_Type__c == 'DEMOGRAPHIC') {
+                // Add specific demographic scoring logic here
+                if (lead.Company != null && lead.Company.length() > 0) {
+                    demographicScore += criteria.Score_Weight__c;
+                }
+                // Add more demographic scoring conditions
             }
         }
+
+        return demographicScore;
+    }
+
+    /**
+     * Calculate engagement score for a lead
+     * @param lead Individual lead to score
+     * @param scoringCriteria List of scoring criteria
+     * @return Engagement score
+     */
+    private static Decimal calculateEngagementScore(Lead lead, List<ACME_Scoring_Criteria__mdt> scoringCriteria) {
+        Decimal engagementScore = 0;
+
+        for (ACME_Scoring_Criteria__mdt criteria : scoringCriteria) {
+            if (criteria.Criteria_Type__c == 'ENGAGEMENT') {
+                // Add specific engagement scoring logic
+                if (lead.ACME_Last_Engagement_Date__c != null) {
+                    Integer daysSinceLastEngagement = lead.ACME_Last_Engagement_Date__c.daysBetween(System.today());
+                    if (daysSinceLastEngagement <= 30) {
+                        engagementScore += criteria.Score_Weight__c;
+                    }
+                }
+            }
+        }
+
+        return engagementScore;
     }
 }
