@@ -1,72 +1,109 @@
 /**
  * @description Test class for ACMELeadScoringService
- * @author Studio Science
- * @date 2024-03-15
+ * @author ACME Development Team
+ * @date 2024-02-15
  */
 @isTest
 private class ACMELeadScoringServiceTest {
     
+    /**
+     * Setup test data for lead scoring tests
+     */
     @testSetup
     static void setupTestData() {
-        // Create test leads with various attributes
-        List<Lead> testLeads = new List<Lead>{
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead1',
-                Company = 'ACME Corp',
-                NumberOfEmployees = 750,
-                Industry = 'Technology',
-                Email = 'test1@example.com',
-                Phone = '1234567890'
-            ),
-            new Lead(
-                FirstName = 'Test',
-                LastName = 'Lead2',
-                Company = 'Small Business',
-                NumberOfEmployees = 25,
-                Industry = 'Retail',
-                HasOptedOutOfEmail = true
-            )
-        };
+        List<Lead> testLeads = new List<Lead>();
+        
+        // High engagement lead
+        testLeads.add(new Lead(
+            FirstName = 'High',
+            LastName = 'Engagement',
+            Company = 'ACME Tech',
+            Email_Opens__c = 10,
+            Website_Visits__c = 20,
+            Content_Downloads__c = 5,
+            Industry = 'Technology',
+            Number_of_Employees__c = 500,
+            Title = 'Director of Operations'
+        ));
+        
+        // Low engagement lead
+        testLeads.add(new Lead(
+            FirstName = 'Low',
+            LastName = 'Engagement',
+            Company = 'Small Business',
+            Email_Opens__c = 1,
+            Website_Visits__c = 2,
+            Content_Downloads__c = 0,
+            Industry = 'Retail',
+            Number_of_Employees__c = 10,
+            Title = 'Assistant'
+        ));
+        
         insert testLeads;
     }
     
+    /**
+     * Test lead scoring calculation for high engagement lead
+     */
     @isTest
-    static void testLeadScoring() {
-        // Retrieve test leads
-        List<Lead> testLeads = [SELECT Id, NumberOfEmployees, Industry, Email, Phone, HasOptedOutOfEmail FROM Lead];
+    static void testHighEngagementLeadScoring() {
+        Lead highEngagementLead = [
+            SELECT Id, Email_Opens__c, Website_Visits__c, 
+                   Content_Downloads__c, Industry, 
+                   Number_of_Employees__c, Title
+            FROM Lead 
+            WHERE FirstName = 'High' AND LastName = 'Engagement'
+        ];
         
         Test.startTest();
-        for (Lead testLead : testLeads) {
-            Integer score = ACMELeadScoringService.calculateLeadScore(testLead);
-            
-            // Assert score is within valid range
-            System.assert(score >= 1 && score <= 100, 'Score should be between 1 and 100');
-            
-            // Update lead score
-            ACMELeadScoringService.updateLeadScore(testLead.Id, score);
-        }
+        Decimal score = ACMELeadScoringService.calculateLeadScore(highEngagementLead);
         Test.stopTest();
         
-        // Verify leads were updated
-        List<Lead> updatedLeads = [SELECT ACME_Lead_Score__c FROM Lead];
-        System.assertEquals(2, updatedLeads.size(), 'All leads should be processed');
+        System.assert(score > 70, 'High engagement lead should have a high score');
     }
     
+    /**
+     * Test lead scoring calculation for low engagement lead
+     */
     @isTest
-    static void testEdgeCases() {
-        // Test lead with minimal information
-        Lead minimalLead = new Lead(
-            FirstName = 'Minimal',
-            LastName = 'Lead',
-            Company = 'No Info'
-        );
+    static void testLowEngagementLeadScoring() {
+        Lead lowEngagementLead = [
+            SELECT Id, Email_Opens__c, Website_Visits__c, 
+                   Content_Downloads__c, Industry, 
+                   Number_of_Employees__c, Title
+            FROM Lead 
+            WHERE FirstName = 'Low' AND LastName = 'Engagement'
+        ];
         
         Test.startTest();
-        Integer score = ACMELeadScoringService.calculateLeadScore(minimalLead);
+        Decimal score = ACMELeadScoringService.calculateLeadScore(lowEngagementLead);
         Test.stopTest();
         
-        // Assert minimum score
-        System.assertEquals(1, score, 'Minimal lead should have minimum score');
+        System.assert(score < 30, 'Low engagement lead should have a low score');
+    }
+    
+    /**
+     * Test lead score update functionality
+     */
+    @isTest
+    static void testLeadScoreUpdate() {
+        Lead testLead = [
+            SELECT Id 
+            FROM Lead 
+            WHERE FirstName = 'High' AND LastName = 'Engagement'
+        ];
+        
+        Test.startTest();
+        ACMELeadScoringService.updateLeadScore(testLead.Id);
+        Test.stopTest();
+        
+        Lead updatedLead = [
+            SELECT ACME_Lead_Score__c, ACME_Last_Scoring_Date__c 
+            FROM Lead 
+            WHERE Id = :testLead.Id
+        ];
+        
+        System.assertNotEquals(null, updatedLead.ACME_Lead_Score__c, 'Lead score should be updated');
+        System.assertNotEquals(null, updatedLead.ACME_Last_Scoring_Date__c, 'Scoring date should be set');
     }
 }
