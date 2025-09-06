@@ -1,5 +1,5 @@
 @isTest
-private class ACMELeadScoringServiceTest {
+private class ACME_LeadScoringService_Test {
     @isTest
     static void testLeadScoring() {
         // Create a test lead
@@ -11,15 +11,9 @@ private class ACMELeadScoringServiceTest {
         );
         insert testLead;
 
-        // Create test metadata
-        ACME_Scoring_Configuration__mdt mockConfig = new ACME_Scoring_Configuration__mdt(
-            MasterLabel = 'Number of Employees',
-            ACME_Weight__c = 2
-        );
-
         // Run the scoring method
         Test.startTest();
-        Decimal score = ACMELeadScoringService.calculateLeadScore(testLead);
+        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead);
         Test.stopTest();
 
         // Assert the score
