@@ -1,0 +1,19 @@
+<template>
+    <div class="slds-card">
+        <header class="slds-card__header">
+            <h2 class="slds-card__header-title">Stories</h2>
+        </header>
+        <div class="slds-card__body">
+            <template if:true={error}>
+                <c:errorPanel errors={error}></c:errorPanel>
+            </template>
+            <template if:false={error}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={stories}
+                    columns={columns}>
+                </lightning-datatable>
+            </template>
+        </div>
+    </div>
+</template>
