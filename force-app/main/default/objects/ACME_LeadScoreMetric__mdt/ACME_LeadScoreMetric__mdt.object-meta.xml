@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>Lead Score Metric</label>
+    <pluralLabel>Lead Score Metrics</pluralLabel>
+    <visibility>Public</visibility>
+    <fields>
+        <fullName>Weight__c</fullName>
+        <type>Number</type>
+        <label>Weight</label>
+        <precision>5</precision>
+        <scale>2</scale>
+    </fields>
+    <fields>
+        <fullName>Criteria__c</fullName>
+        <type>Text</type>
+        <label>Scoring Criteria</label>
+        <length>255</length>
+    </fields>
+</CustomObject>
