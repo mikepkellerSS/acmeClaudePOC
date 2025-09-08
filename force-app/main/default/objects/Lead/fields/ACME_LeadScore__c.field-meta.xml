@@ -2,7 +2,8 @@
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
     <fullName>ACME_LeadScore__c</fullName>
     <label>Lead Score</label>
-    <type>Number</type>
-    <precision>3</precision>
-    <scale>0</scale>
+    <type>Formula</type>
+    <precision>5</precision>
+    <scale>2</scale>
+    <formula>IF(ISBLANK(ACME_LeadScore__r.Score__c), 0, ACME_LeadScore__r.Score__c)</formula>
 </CustomField>
