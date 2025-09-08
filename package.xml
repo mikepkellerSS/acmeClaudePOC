@@ -6,9 +6,16 @@
         <name>ApexClass</name>
     </types>
     <types>
+        <members>ACME_LeadScore__c.Lead__c</members>
+        <members>ACME_LeadScore__c.Score__c</members>
+        <members>ACME_LeadScore__c.LastCalculated__c</members>
+        <members>ACME_LeadScore__c.EngagementPoints__c</members>
+        <members>ACME_LeadScore__c.DemographicPoints__c</members>
+        <members>ACME_LeadScoringCriteria__mdt.CriteriaName__c</members>
+        <members>ACME_LeadScoringCriteria__mdt.Weight__c</members>
+        <members>ACME_LeadScoringCriteria__mdt.MinimumThreshold__c</members>
+        <members>ACME_LeadScoringCriteria__mdt.MaximumPoints__c</members>
         <members>Lead.ACME_LeadScore__c</members>
-        <members>Lead.ACME_EngagementLevel__c</members>
-        <members>Lead.ACME_LastEngagementDate__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
