@@ -1,0 +1,20 @@
+<template>
+    <lightning-card title="Story List">
+        <div class="slds-p-around_medium">
+            <template if:true={error}>
+                <c-error-panel errors={error}></c-error-panel>
+            </template>
+            <template if:true={stories.length}>
+                <lightning-datatable
+                    key-field="Id"
+                    data={stories}
+                    columns={columns}
+                    onrowaction={handleRowAction}>
+                </lightning-datatable>
+            </template>
+            <template if:false={stories.length}>
+                <p>No stories found.</p>
+            </template>
+        </div>
+    </lightning-card>
+</template>
