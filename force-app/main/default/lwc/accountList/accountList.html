@@ -1,0 +1,21 @@
+<template>
+    <lightning-card title="Accounts" icon-name="standard:account">
+        <div class="slds-p-around_medium">
+            <lightning-button 
+                label="New Account" 
+                onclick={handleNewAccount}
+                variant="brand">
+            </lightning-button>
+            
+            <lightning-datatable
+                key-field="Id"
+                data={accounts}
+                columns={columns}
+                class="slds-m-top_medium">
+            </lightning-datatable>
+        </div>
+        <c-account-form 
+            onaccountcreated={handleAccountCreated}>
+        </c-account-form>
+    </lightning-card>
+</template>
