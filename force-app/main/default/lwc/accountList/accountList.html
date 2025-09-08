@@ -1,0 +1,25 @@
+<template>
+    <lightning-card title="Accounts" icon-name="standard:account">
+        <div class="slds-p-around_medium">
+            <lightning-button 
+                label="Create Account" 
+                onclick={handleCreateAccount}
+                variant="brand">
+            </lightning-button>
+
+            <template if:true={error}>
+                <p class="slds-text-color_error">{error}</p>
+            </template>
+
+            <lightning-datatable
+                key-field="Id"
+                data={accounts}
+                columns={[
+                    { label: 'Name', fieldName: 'Name' },
+                    { label: 'Type', fieldName: 'Type' },
+                    { label: 'Industry', fieldName: 'Industry' }
+                ]}>
+            </lightning-datatable>
+        </div>
+    </lightning-card>
+</template>
