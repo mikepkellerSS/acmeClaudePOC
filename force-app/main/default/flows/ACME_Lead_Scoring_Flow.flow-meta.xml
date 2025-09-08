@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>54.0</apiVersion>
+    <description>Lead Scoring Flow</description>
+    <interviewLabel>ACME Lead Scoring Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>ACME Lead Scoring Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>Score_Lead</targetReference>
+        </connector>
+    </start>
+    <status>Active</status>
+</Flow>
