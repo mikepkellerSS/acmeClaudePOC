@@ -1,114 +1,133 @@
 /**
- * Lead Scoring Service for calculating and managing lead scores
- * Implements complex scoring logic with security and performance considerations
+ * Service class for calculating and managing lead scores
  */
 public with sharing class ACME_LeadScoringService {
     
     /**
-     * Calculate lead score based on multiple criteria
-     * @param leadRecord The lead record to score
-     * @return Integer representing lead score between 0-100
+     * Calculate lead score for a specific lead
+     * @param leadId The ID of the lead to score
+     * @return The calculated lead score
      */
-    public static Integer calculateLeadScore(Lead leadRecord) {
+    public static Decimal calculateLeadScore(Id leadId) {
         // Validate input
-        if (leadRecord == null) {
-            return 0;
+        if (leadId == null) {
+            throw new IllegalArgumentException('Lead ID cannot be null');
         }
 
-        Integer score = 0;
+        // Retrieve lead with necessary details
+        Lead leadRecord = retrieveLead(leadId);
         
-        // Retrieve scoring metrics from custom metadata
-        List<ACME_LeadScoreMetric__mdt> scoringMetrics = [
-            SELECT MasterLabel, Weight__c, Criteria__c 
-            FROM ACME_LeadScoreMetric__mdt 
-            WITH SECURITY_ENFORCED
+        // Calculate scores for different criteria
+        Decimal engagementPoints = calculateEngagementPoints(leadRecord);
+        Decimal demographicPoints = calculateDemographicPoints(leadRecord);
+        
+        // Total score calculation
+        Decimal totalScore = engagementPoints + demographicPoints;
+        
+        // Create or update lead score record
+        upsertLeadScoreRecord(leadId, totalScore, engagementPoints, demographicPoints);
+        
+        return totalScore;
+    }
+    
+    /**
+     * Retrieve lead record with necessary details
+     * @param leadId The ID of the lead to retrieve
+     * @return The lead record
+     */
+    private static Lead retrieveLead(Id leadId) {
+        // Implement secure query with FLS checks
+        if (!Schema.sObjectType.Lead.isAccessible()) {
+            throw new System.NoAccessException('No access to Lead object');
+        }
+        
+        return [
+            SELECT Id, Email, Company, Title, 
+                   NumberOfEmployees, LeadSource, 
+                   (SELECT Id FROM Interactions__r)
+            FROM Lead 
+            WHERE Id = :leadId 
+            LIMIT 1
         ];
-
-        // Calculate demographic score
-        score += calculateDemographicScore(leadRecord, scoringMetrics);
+    }
+    
+    /**
+     * Calculate engagement points based on lead interactions
+     * @param lead The lead record
+     * @return Engagement points
+     */
+    private static Decimal calculateEngagementPoints(Lead lead) {
+        Decimal engagementPoints = 0;
         
-        // Calculate engagement score
-        score += calculateEngagementScore(leadRecord, scoringMetrics);
+        // Email engagement
+        if (String.isNotBlank(lead.Email)) {
+            engagementPoints += 10;
+        }
         
-        // Ensure score is between 0-100
-        return Math.min(Math.max(score, 0), 100);
+        // Interaction points
+        if (lead.Interactions__r != null && !lead.Interactions__r.isEmpty()) {
+            engagementPoints += Math.min(lead.Interactions__r.size() * 5, 30);
+        }
+        
+        return engagementPoints;
     }
-
+    
     /**
-     * Calculate demographic scoring based on lead attributes
-     * @param leadRecord Lead record to evaluate
-     * @param scoringMetrics List of scoring metrics
-     * @return Integer demographic score component
+     * Calculate demographic points based on lead attributes
+     * @param lead The lead record
+     * @return Demographic points
      */
-    private static Integer calculateDemographicScore(Lead leadRecord, List<ACME_LeadScoreMetric__mdt> scoringMetrics) {
-        Integer demographicScore = 0;
-
-        // Example demographic scoring logic
-        if (String.isNotBlank(leadRecord.Company)) {
-            demographicScore += 10;
+    private static Decimal calculateDemographicPoints(Lead lead) {
+        Decimal demographicPoints = 0;
+        
+        // Company size points
+        if (lead.NumberOfEmployees != null) {
+            if (lead.NumberOfEmployees > 1000) {
+                demographicPoints += 20;
+            } else if (lead.NumberOfEmployees > 100) {
+                demographicPoints += 10;
+            }
         }
-
-        if (String.isNotBlank(leadRecord.Title)) {
-            demographicScore += 15;
+        
+        // Job title points
+        if (String.isNotBlank(lead.Title)) {
+            List<String> seniorTitles = new List<String>{'CEO', 'CTO', 'CFO', 'Director', 'VP'};
+            for (String title : seniorTitles) {
+                if (lead.Title.containsIgnoreCase(title)) {
+                    demographicPoints += 15;
+                    break;
+                }
+            }
         }
-
-        return demographicScore;
+        
+        return demographicPoints;
     }
-
+    
     /**
-     * Calculate engagement scoring based on lead interactions
-     * @param leadRecord Lead record to evaluate
-     * @param scoringMetrics List of scoring metrics
-     * @return Integer engagement score component
+     * Upsert lead score record
+     * @param leadId The lead ID
+     * @param totalScore Total calculated score
+     * @param engagementPoints Engagement points
+     * @param demographicPoints Demographic points
      */
-    private static Integer calculateEngagementScore(Lead leadRecord, List<ACME_LeadScoreMetric__mdt> scoringMetrics) {
-        Integer engagementScore = 0;
-
-        // Example engagement scoring logic
-        if (leadRecord.NumberOfEmployees != null && leadRecord.NumberOfEmployees > 100) {
-            engagementScore += 20;
+    private static void upsertLeadScoreRecord(Id leadId, Decimal totalScore, 
+                                              Decimal engagementPoints, 
+                                              Decimal demographicPoints) {
+        // Implement secure DML with FLS checks
+        if (!Schema.sObjectType.ACME_LeadScore__c.isCreateable() || 
+            !Schema.sObjectType.ACME_LeadScore__c.isUpdateable()) {
+            throw new System.NoAccessException('No access to create/update Lead Score');
         }
-
-        return engagementScore;
-    }
-
-    /**
-     * Update lead score and engagement level
-     * @param leadId ID of the lead to update
-     * @param score Calculated lead score
-     */
-    public static void updateLeadScore(Id leadId, Integer score) {
-        // Perform FLS and CRUD checks
-        if (!Schema.SObjectType.Lead.isUpdateable()) {
-            return;
-        }
-
-        Lead leadToUpdate = new Lead(
-            Id = leadId,
-            ACME_LeadScore__c = score,
-            ACME_EngagementLevel__c = determineEngagementLevel(score)
+        
+        ACME_LeadScore__c leadScore = new ACME_LeadScore__c(
+            Lead__c = leadId,
+            Score__c = totalScore,
+            LastCalculated__c = System.now(),
+            EngagementPoints__c = engagementPoints,
+            DemographicPoints__c = demographicPoints
         );
-
-        try {
-            update leadToUpdate;
-        } catch (Exception e) {
-            // Log error
-            System.debug(LoggingLevel.ERROR, 'Error updating lead score: ' + e.getMessage());
-        }
-    }
-
-    /**
-     * Determine engagement level based on lead score
-     * @param score Lead score
-     * @return Engagement level as a string
-     */
-    private static String determineEngagementLevel(Integer score) {
-        if (score >= 80) {
-            return 'Hot';
-        } else if (score >= 50) {
-            return 'Warm';
-        } else {
-            return 'Cold';
-        }
+        
+        // Upsert based on Lead lookup
+        upsert leadScore Lead__c;
     }
 }
