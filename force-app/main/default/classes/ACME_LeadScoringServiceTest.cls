@@ -1,67 +1,57 @@
 /**
- * Test class for ACME_LeadScoringService to ensure comprehensive code coverage
+ * Test class for ACME_LeadScoringService
  */
 @isTest
 private class ACME_LeadScoringServiceTest {
     
     /**
-     * Test lead score calculation with valid lead
+     * Test lead score calculation
      */
     @isTest
-    static void testCalculateLeadScore() {
+    static void testLeadScoreCalculation() {
         // Create test lead
         Lead testLead = new Lead(
             FirstName = 'Test',
             LastName = 'Lead',
             Company = 'Test Company',
-            Title = 'Director',
-            NumberOfEmployees = 250
-        );
-        
-        // Calculate score
-        Integer score = ACME_LeadScoringService.calculateLeadScore(testLead);
-        
-        // Assertions
-        System.assertNotEquals(null, score, 'Score should not be null');
-        System.assert(score >= 0 && score <= 100, 'Score should be between 0 and 100');
-    }
-
-    /**
-     * Test lead score update functionality
-     */
-    @isTest
-    static void testUpdateLeadScore() {
-        // Create test lead
-        Lead testLead = new Lead(
-            FirstName = 'Update',
-            LastName = 'Score',
-            Company = 'Test Inc',
-            Status = 'Open'
+            Email = 'test@example.com',
+            Title = 'Director of Sales',
+            NumberOfEmployees = 500
         );
         insert testLead;
-
-        // Calculate and update score
-        Integer score = ACME_LeadScoringService.calculateLeadScore(testLead);
-        ACME_LeadScoringService.updateLeadScore(testLead.Id, score);
-
-        // Retrieve updated lead
-        Lead updatedLead = [
-            SELECT ACME_LeadScore__c, ACME_EngagementLevel__c 
-            FROM Lead 
-            WHERE Id = :testLead.Id
-        ];
-
+        
+        // Execute score calculation
+        Test.startTest();
+        Decimal score = ACME_LeadScoringService.calculateLeadScore(testLead.Id);
+        Test.stopTest();
+        
         // Assertions
-        System.assertEquals(score, updatedLead.ACME_LeadScore__c, 'Lead score should match calculated score');
-        System.assertNotEquals(null, updatedLead.ACME_EngagementLevel__c, 'Engagement level should be set');
+        System.assertNotEquals(0, score, 'Score should be calculated');
+        
+        // Verify lead score record
+        ACME_LeadScore__c leadScore = [
+            SELECT Score__c, EngagementPoints__c, DemographicPoints__c 
+            FROM ACME_LeadScore__c 
+            WHERE Lead__c = :testLead.Id 
+            LIMIT 1
+        ];
+        
+        System.assertEquals(score, leadScore.Score__c, 'Score should match');
+        System.assertNotEquals(0, leadScore.EngagementPoints__c, 'Engagement points should be calculated');
+        System.assertNotEquals(0, leadScore.DemographicPoints__c, 'Demographic points should be calculated');
     }
-
+    
     /**
-     * Test null lead scenario
+     * Test null lead ID handling
      */
     @isTest
-    static void testNullLeadScore() {
-        Integer score = ACME_LeadScoringService.calculateLeadScore(null);
-        System.assertEquals(0, score, 'Null lead should return zero score');
+    static void testNullLeadIdHandling() {
+        // Verify exception is thrown for null lead ID
+        try {
+            ACME_LeadScoringService.calculateLeadScore(null);
+            System.assert(false, 'Expected IllegalArgumentException');
+        } catch (IllegalArgumentException e) {
+            System.assert(true, 'Correct exception thrown');
+        }
     }
 }
