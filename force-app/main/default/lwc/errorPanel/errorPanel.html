@@ -1,0 +1,8 @@
+<template>
+    <div class="slds-text-color_error">
+        <p>{friendlyMessage}</p>
+        <template if:true={errors}>
+            <p>{errors}</p>
+        </template>
+    </div>
+</template>
