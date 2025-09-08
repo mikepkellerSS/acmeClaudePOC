@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>56.0</apiVersion>
+    <description>Calculates lead score for new and updated leads</description>
+    <interviewLabel>ACME Lead Scoring Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>ACME Lead Scoring Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>LightningFlowBuilder</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Calculate_Lead_Score</targetReference>
+        </connector>
+        <triggerType>RecordBeforeSave</triggerType>
+    </start>
+    <actionCalls>
+        <name>Calculate_Lead_Score</name>
+        <label>Calculate Lead Score</label>
+        <namespace>c</namespace>
+        <actionName>ACMELeadScoringService</actionName>
+        <actionType>apex</actionType>
+        <dataInputs>
+            <name>leadRecord</name>
+            <value>
+                <elementReference>$Record</elementReference>
+            </value>
+        </dataInputs>
+        <dataOutputs>
+            <name>leadScore</name>
+            <value>
+                <elementReference>$Record.ACME_Lead_Score__c</elementReference>
+            </value>
+        </dataOutputs>
+    </actionCalls>
+</Flow>
