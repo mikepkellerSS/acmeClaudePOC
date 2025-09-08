@@ -1,72 +1,74 @@
-/**
- * @description Test class for ACMELeadScoringService
- * @author Studio Science
- * @date 2024-03-15
- */
 @isTest
 private class ACMELeadScoringServiceTest {
     
-    @testSetup
-    static void setupTestData() {
-        // Create test leads with various attributes
+    @isTest
+    static void testCalculateLeadScore_Positive() {
+        // Create test lead
+        Lead testLead = new Lead(
+            FirstName = 'Test',
+            LastName = 'Lead',
+            Company = 'Test Company',
+            Number_of_Email_Opens__c = 5,
+            Website_Visits__c = 10,
+            Content_Downloads__c = 3,
+            Company_Size__c = 'Enterprise',
+            Industry = 'Technology',
+            Title = 'CTO',
+            Country = 'United States'
+        );
+
+        Test.startTest();
+        Integer score = ACMELeadScoringService.calculateLeadScore(testLead);
+        Test.stopTest();
+
+        System.assert(score > 0 && score <= 100, 'Lead score should be between 0 and 100');
+    }
+
+    @isTest
+    static void testCalculateLeadScore_Null() {
+        Test.startTest();
+        Integer score = ACMELeadScoringService.calculateLeadScore(null);
+        Test.stopTest();
+
+        System.assertEquals(0, score, 'Null lead should return 0 score');
+    }
+
+    @isTest
+    static void testUpdateLeadScores() {
+        // Create test leads
         List<Lead> testLeads = new List<Lead>{
             new Lead(
-                FirstName = 'Test',
+                FirstName = 'Test1',
                 LastName = 'Lead1',
-                Company = 'ACME Corp',
-                NumberOfEmployees = 750,
-                Industry = 'Technology',
-                Email = 'test1@example.com',
-                Phone = '1234567890'
+                Company = 'Test Company 1',
+                Number_of_Email_Opens__c = 5,
+                Website_Visits__c = 10
             ),
             new Lead(
-                FirstName = 'Test',
+                FirstName = 'Test2',
                 LastName = 'Lead2',
-                Company = 'Small Business',
-                NumberOfEmployees = 25,
-                Industry = 'Retail',
-                HasOptedOutOfEmail = true
+                Company = 'Test Company 2',
+                Content_Downloads__c = 3
             )
         };
+
         insert testLeads;
-    }
-    
-    @isTest
-    static void testLeadScoring() {
-        // Retrieve test leads
-        List<Lead> testLeads = [SELECT Id, NumberOfEmployees, Industry, Email, Phone, HasOptedOutOfEmail FROM Lead];
-        
+
         Test.startTest();
-        for (Lead testLead : testLeads) {
-            Integer score = ACMELeadScoringService.calculateLeadScore(testLead);
-            
-            // Assert score is within valid range
-            System.assert(score >= 1 && score <= 100, 'Score should be between 1 and 100');
-            
-            // Update lead score
-            ACMELeadScoringService.updateLeadScore(testLead.Id, score);
-        }
+        ACMELeadScoringService.updateLeadScores(testLeads);
         Test.stopTest();
-        
-        // Verify leads were updated
-        List<Lead> updatedLeads = [SELECT ACME_Lead_Score__c FROM Lead];
+
+        // Retrieve updated leads
+        List<Lead> updatedLeads = [
+            SELECT ACME_Lead_Score__c, ACME_Lead_Score_Last_Updated__c 
+            FROM Lead 
+            WHERE Id IN :testLeads
+        ];
+
         System.assertEquals(2, updatedLeads.size(), 'All leads should be processed');
-    }
-    
-    @isTest
-    static void testEdgeCases() {
-        // Test lead with minimal information
-        Lead minimalLead = new Lead(
-            FirstName = 'Minimal',
-            LastName = 'Lead',
-            Company = 'No Info'
-        );
-        
-        Test.startTest();
-        Integer score = ACMELeadScoringService.calculateLeadScore(minimalLead);
-        Test.stopTest();
-        
-        // Assert minimum score
-        System.assertEquals(1, score, 'Minimal lead should have minimum score');
+        for (Lead lead : updatedLeads) {
+            System.assertNotEquals(null, lead.ACME_Lead_Score__c, 'Lead score should be set');
+            System.assertNotEquals(null, lead.ACME_Lead_Score_Last_Updated__c, 'Update timestamp should be set');
+        }
     }
 }
