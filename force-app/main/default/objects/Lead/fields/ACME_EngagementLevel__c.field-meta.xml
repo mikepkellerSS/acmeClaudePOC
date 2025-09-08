@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>ACME_EngagementLevel__c</fullName>
+    <label>Engagement Level</label>
+    <type>Picklist</type>
+    <valueSet>
+        <valueSetDefinition>
+            <value>
+                <fullName>Cold</fullName>
+                <default>true</default>
+            </value>
+            <value>
+                <fullName>Warm</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>Hot</fullName>
+                <default>false</default>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
