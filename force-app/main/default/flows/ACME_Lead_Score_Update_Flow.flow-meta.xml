@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <description>Automatically update lead score when key fields change</description>
+    <label>Lead Score Update Flow</label>
+    <processMetadataValues>
+        <name>BuilderType</name>
+        <value>
+            <stringValue>AutoLaunchedFlow</stringValue>
+        </value>
+    </processMetadataValues>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>0</locationY>
+        <connector>
+            <targetReference>Update_Lead_Score</targetReference>
+        </connector>
+        <triggerType>RecordAfterSave</triggerType>
+    </start>
+    <actionCalls>
+        <name>Update_Lead_Score</name>
+        <label>Update Lead Score</label>
+        <namespace>ACME_LeadScoringService</namespace>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>End</targetReference>
+        </connector>
+        <methodReference>updateLeadScore</methodReference>
+        <inputParameters>
+            <processMetadataValues>
+                <name>dataType</name>
+                <value>
+                    <stringValue>ID</stringValue>
+                </value>
+            </processMetadataValues>
+            <name>leadId</name>
+            <value>
+                <elementReference>$Record.Id</elementReference>
+            </value>
+        </inputParameters>
+    </actionCalls>
+    <interviewLabel>Lead Score Update Flow {!$Flow.CurrentDateTime}</interviewLabel>
+    <label>Lead Score Update Flow</label>
+    <processType>AutoLaunchedFlow</processType>
+    <status>Active</status>
+</Flow>
