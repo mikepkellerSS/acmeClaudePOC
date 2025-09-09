@@ -1,11 +1,11 @@
-trigger LeadTrigger on Lead (after insert, after update) {
-    if (!LeadTriggerHandler.isRunning) {
-        LeadTriggerHandler.isRunning = true;
-        
-        if (Trigger.isAfter && (Trigger.isInsert || Trigger.isUpdate)) {
-            ACME_LeadScoringService.updateLeadScores(Trigger.new);
+trigger LeadTrigger on Lead (before insert, before update) {
+    if (Trigger.isBefore) {
+        if (Trigger.isInsert) {
+            LeadTriggerHandler.handleBeforeInsert(Trigger.new);
         }
         
-        LeadTriggerHandler.isRunning = false;
+        if (Trigger.isUpdate) {
+            LeadTriggerHandler.handleBeforeUpdate(Trigger.new, Trigger.oldMap);
+        }
     }
 }
