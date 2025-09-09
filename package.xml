@@ -2,21 +2,18 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <types>
         <members>ACME_LeadScoringService</members>
+        <members>ACME_LeadScoringBatch</members>
         <members>ACME_LeadScoringService_Test</members>
-        <members>LeadTriggerHandler</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>LeadTrigger</members>
+        <members>ACME_LeadTrigger</members>
         <name>ApexTrigger</name>
     </types>
     <types>
-        <members>ACME_LeadScoringCriteria__mdt</members>
-        <name>CustomObject</name>
-    </types>
-    <types>
-        <members>ACME_LeadScore__c</members>
-        <members>ACME_LastScoredDate__c</members>
+        <members>Lead.ACME_Lead_Score__c</members>
+        <members>Lead.ACME_Last_Scored_Date__c</members>
+        <members>Lead.ACME_Scoring_Criteria_JSON__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
