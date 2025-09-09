@@ -9,13 +9,16 @@
     <valueSet>
         <restricted>true</restricted>
         <valueSetDefinition>
+            <sorted>false</sorted>
             <value>
-                <fullName>Engagement</fullName>
+                <fullName>Numeric</fullName>
                 <default>false</default>
+                <label>Numeric</label>
             </value>
             <value>
-                <fullName>Demographics</fullName>
+                <fullName>Boolean</fullName>
                 <default>false</default>
+                <label>Boolean</label>
             </value>
         </valueSetDefinition>
     </valueSet>
