@@ -3,20 +3,18 @@
     <types>
         <members>ACME_LeadScoringService</members>
         <members>ACME_LeadScoringService_Test</members>
-        <members>LeadTriggerHandler</members>
         <name>ApexClass</name>
     </types>
     <types>
-        <members>LeadTrigger</members>
-        <name>ApexTrigger</name>
+        <members>ACME_Lead_Scoring_Flow</members>
+        <name>Flow</name>
     </types>
     <types>
-        <members>ACME_LeadScoringCriteria__mdt</members>
-        <name>CustomObject</name>
-    </types>
-    <types>
-        <members>ACME_LeadScore__c</members>
-        <members>ACME_LastScoredDate__c</members>
+        <members>Lead.ACME_Lead_Score__c</members>
+        <members>Lead.ACME_Last_Scored_Date__c</members>
+        <members>Lead.ACME_Website_Visits__c</members>
+        <members>Lead.ACME_Email_Interactions__c</members>
+        <members>Lead.ACME_Content_Downloads__c</members>
         <name>CustomField</name>
     </types>
     <version>59.0</version>
