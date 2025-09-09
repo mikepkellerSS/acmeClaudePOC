@@ -1,7 +1,7 @@
 @isTest
 private class ACME_LeadScoringService_Test {
-    @isTest
-    static void testLeadScoring() {
+    @TestSetup
+    static void setupTestData() {
         // Create test leads
         List<Lead> testLeads = new List<Lead>{
             new Lead(
@@ -14,6 +14,16 @@ private class ACME_LeadScoringService_Test {
         };
         
         insert testLeads;
+    }
+
+    @isTest
+    static void testLeadScoring() {
+        // Retrieve test leads
+        List<Lead> testLeads = [
+            SELECT Id, FirstName, LastName, Company, AnnualRevenue, NumberOfEmployees 
+            FROM Lead 
+            WHERE LastName = 'Lead'
+        ];
         
         Test.startTest();
         ACME_LeadScoringService.scoreLead(testLeads);
