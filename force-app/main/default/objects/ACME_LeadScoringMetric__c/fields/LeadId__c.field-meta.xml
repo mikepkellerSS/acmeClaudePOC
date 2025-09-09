@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>LeadId__c</fullName>
+    <externalId>false</externalId>
+    <label>Lead</label>
+    <referenceTo>Lead</referenceTo>
+    <relationshipLabel>Lead Scoring Metrics</relationshipLabel>
+    <relationshipName>LeadScoringMetrics</relationshipName>
+    <type>Lookup</type>
+</CustomField>
