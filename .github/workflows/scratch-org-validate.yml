@@ -92,16 +92,32 @@ jobs:
           id: deploy
           run: |
             echo "Starting deployment to scratch org..."
-            sf project deploy start -o scratch-org -w 20 2>&1 | tee deploy-output.txt
-            DEPLOY_EXIT_CODE=${PIPESTATUS[0]}
             
-            # Check for deployment errors in the output
-            if [ $DEPLOY_EXIT_CODE -ne 0 ] || grep -q "Deploy failed" deploy-output.txt || grep -q "Component errors" deploy-output.txt; then
+            # Use JSON output for structured error reporting
+            sf project deploy start -o scratch-org -w 20 --json > deploy-output.json 2>&1
+            DEPLOY_EXIT_CODE=$?
+            
+            # Display the output for debugging
+            cat deploy-output.json
+            
+            if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
               echo "deploy_success=false" >> $GITHUB_OUTPUT
               echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
               
-              # Extract specific errors for reporting
-              ERRORS=$(grep -A 5 -E "Error:|Failed:|Component errors|No such column|Field does not exist|Variable does not exist" deploy-output.txt | head -20 | tr '\n' ' ' | sed 's/"/\\"/g')
+              # Extract errors from JSON output using jq
+              if command -v jq &> /dev/null; then
+                # Extract component errors from the JSON response
+                ERRORS=$(jq -r '.result.details.componentFailures[]? | "\(.componentType): \(.fullName) - \(.problem) (Line: \(.lineNumber // "N/A"))"' deploy-output.json 2>/dev/null | tr '\n' ' ' | sed 's/"/\\"/g')
+                
+                # If no component failures, try to get the error message
+                if [ -z "$ERRORS" ]; then
+                  ERRORS=$(jq -r '.message // .error // "Deployment failed - see logs"' deploy-output.json 2>/dev/null | sed 's/"/\\"/g')
+                fi
+              else
+                # Fallback if jq is not available - extract error patterns from JSON text
+                ERRORS=$(grep -oE '"problem":"[^"]*"|"message":"[^"]*"|"error":"[^"]*"' deploy-output.json | head -10 | tr '\n' ' ' | sed 's/"/\\"/g')
+              fi
+              
               echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
             else
               echo "deploy_success=true" >> $GITHUB_OUTPUT
@@ -125,8 +141,9 @@ jobs:
               DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
               
               # Fallback if no specific errors captured
-              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.txt ]; then
-                DEPLOY_ERROR=$(tail -20 deploy-output.txt | grep -E "Error|Failed|error|failed" | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed - check GitHub Actions logs")
+              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.json ]; then
+                # Try to extract any error info from JSON
+                DEPLOY_ERROR=$(grep -oE '"problem":"[^"]*"|"message":"[^"]*"|"error":"[^"]*"' deploy-output.json | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed - check GitHub Actions logs")
               fi
               
               # Default message if still no errors
