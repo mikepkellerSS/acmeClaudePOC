@@ -1,0 +1,28 @@
+# Salesforce DX
+.sfdx/
+.localdevserver/
+
+# LWC VSCode autocomplete
+**/lwc/jsconfig.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+
+# Salesforce cache
+.sf/
+
+# VS Code configuration files
+.vscode/
+
+# MacOS system files
+.DS_Store
+
+# Miscellaneous
+.eslintcache
