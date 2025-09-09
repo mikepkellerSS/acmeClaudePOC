@@ -1,54 +1,29 @@
 public with sharing class ACME_LeadScoringService {
-    public static Integer calculateLeadScore(Lead leadRecord) {
-        if (leadRecord == null) {
-            return 1;
-        }
-
-        Integer score = 0;
-        
-        List<ACME_LeadScoringCriteria__mdt> criteria = 
-            [SELECT Field__c, Weight__c, ScoreType__c 
+    public static void scoreLead(List<Lead> leads) {
+        // Retrieve lead scoring criteria from custom metadata
+        List<ACME_LeadScoringCriteria__mdt> scoringCriteria = 
+            [SELECT Field__c, ScoreType__c, Weight__c 
              FROM ACME_LeadScoringCriteria__mdt];
         
-        for (ACME_LeadScoringCriteria__mdt criterion : criteria) {
-            if (meetsCriterion(leadRecord, criterion)) {
-                score += Integer.valueOf(criterion.Weight__c);
-            }
-        }
-        
-        return Math.min(Math.max(score, 1), 100);
-    }
-
-    private static Boolean meetsCriterion(Lead lead, ACME_LeadScoringCriteria__mdt criterion) {
-        try {
-            Object fieldValue = lead.get(criterion.Field__c);
-            return fieldValue != null;
-        } catch (Exception e) {
-            System.debug(LoggingLevel.ERROR, 
-                'Error evaluating lead scoring criterion: ' + e.getMessage());
-            return false;
-        }
-    }
-
-    public static void updateLeadScores(List<Lead> leads) {
-        List<Lead> leadsToUpdate = new List<Lead>();
-        
         for (Lead lead : leads) {
-            Integer score = calculateLeadScore(lead);
+            Decimal totalScore = 0;
             
-            Lead updatedLead = new Lead(Id = lead.Id);
-            updatedLead.ACME_LeadScore__c = score;
-            updatedLead.ACME_LastScoredDate__c = System.now();
+            for (ACME_LeadScoringCriteria__mdt criteria : scoringCriteria) {
+                Object fieldValue = lead.get(criteria.Field__c);
+                
+                if (fieldValue != null) {
+                    if (criteria.ScoreType__c == 'Numeric') {
+                        Decimal numericValue = Decimal.valueOf(String.valueOf(fieldValue));
+                        totalScore += numericValue * (criteria.Weight__c != null ? criteria.Weight__c : 1);
+                    } else if (criteria.ScoreType__c == 'Boolean') {
+                        Boolean boolValue = Boolean.valueOf(fieldValue);
+                        totalScore += boolValue ? (criteria.Weight__c != null ? criteria.Weight__c : 1) : 0;
+                    }
+                }
+            }
             
-            leadsToUpdate.add(updatedLead);
-        }
-        
-        if (!leadsToUpdate.isEmpty()) {
-            SObjectAccessDecision securityDecision = Security.stripInaccessible(
-                AccessType.UPDATABLE, leadsToUpdate
-            );
-            
-            update securityDecision.getRecords();
+            lead.ACME_LeadScore__c = totalScore;
+            lead.ACME_LastScoredDate__c = System.now();
         }
     }
 }
