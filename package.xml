@@ -3,7 +3,7 @@
     <types>
         <members>ACME_MathService</members>
         <members>ACME_MathServiceTest</members>
-        <members>ACME_CalculationSelector</members>
+        <members>ACME_CalculationHistorySelector</members>
         <members>ACME_CalculationHistoryService</members>
         <name>ApexClass</name>
     </types>
