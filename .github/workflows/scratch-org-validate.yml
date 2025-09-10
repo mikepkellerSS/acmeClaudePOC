@@ -60,10 +60,24 @@ jobs:
         - name: Authenticate Dev Hub (if secret exists)
           if: env.DEVHUB_AUTH_URL != ''
           run: |
+            echo "Authenticating to DevHub..."
             echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
-            sf org login sfdx-url -f auth-url.txt -a devhub -d
-            rm auth-url.txt
 
+            # Try to authenticate and set as DevHub
+            sf org login sfdx-url --sfdx-url-file auth-url.txt --alias devhub --set-default-dev-hub
+
+            # Verify it's a DevHub
+            sf org display --target-org devhub --json > org-info.json
+            cat org-info.json
+
+            # Check if DevHub is enabled
+            if ! grep -q '"isDevHub":true' org-info.json; then
+              echo "ERROR: Authenticated org is not a DevHub. Enabling DevHub..."
+              # Try to enable DevHub (this might not work depending on org type)
+              sf org open --target-org devhub --path /lightning/setup/DevHub/home
+            fi
+
+            rm auth-url.txt org-info.json
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
@@ -74,7 +88,6 @@ jobs:
               echo "org_created=true" >> $GITHUB_OUTPUT
             else
               echo "org_created=false" >> $GITHUB_OUTPUT
-              echo "Scratch org creation failed"
             fi
 
         - name: Deploy to Scratch Org
@@ -84,21 +97,22 @@ jobs:
             echo "Starting deployment to scratch org..."
             
             # Use JSON output for structured error reporting
-            if sf project deploy start -o scratch-org -w 20 --json > deploy-output.json 2>&1; then
+            sf project deploy start -o scratch-org -w 20 --json > deploy-output.json 2>&1
+            DEPLOY_EXIT_CODE=$?
+            
+            # Display the output for debugging
+            cat deploy-output.json
+            
+            if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
+              echo "deploy_success=false" >> $GITHUB_OUTPUT
+              echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
+              
+              # Just send the entire JSON response - Claude will understand it
+              ERRORS=$(cat deploy-output.json | sed 's/"/\\"/g')
+              echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
+            else
               echo "deploy_success=true" >> $GITHUB_OUTPUT
               echo "Deployment succeeded!"
-            else
-              echo "deploy_success=false" >> $GITHUB_OUTPUT
-              echo "Deployment failed"
-              
-              # Display the output for debugging
-              echo "=== DEPLOYMENT ERROR OUTPUT ==="
-              cat deploy-output.json
-              echo "=== END DEPLOYMENT ERROR OUTPUT ==="
-              
-              # Send the entire JSON response
-              ERRORS=$(cat deploy-output.json | sed 's/"/\\\\"/g' | tr -d '\n')
-              echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
             fi
 
         - name: Report validation results to Replit
@@ -117,33 +131,25 @@ jobs:
               echo "Reporting failure to Replit..."
               DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
               
-              # Check if scratch org creation failed
-              if [ "${{ steps.create-org.outputs.org_created }}" != "true" ]; then
-                DEPLOY_ERROR="Scratch org creation failed. DevHub authentication or org creation issue. Check DevHub is enabled and accessible."
-              # Check if deployment step ran but failed  
-              elif [ "${{ steps.deploy.outputs.deploy_success }}" == "false" ] && [ -f deploy-output.json ]; then
-                # Send the actual JSON deployment errors
+              # Fallback if no specific errors captured
+              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.json ]; then
+                # Just send the entire JSON
                 DEPLOY_ERROR=$(cat deploy-output.json | sed 's/"/\\"/g')
               fi
               
-              # Final fallback
+              # Default message if still no errors
               if [ -z "$DEPLOY_ERROR" ]; then
-                DEPLOY_ERROR="Validation failed - check GitHub Actions logs for details"
+                DEPLOY_ERROR="Deployment failed - check GitHub Actions logs for details"
               fi
-              
-              # Write JSON to temp file to avoid escaping issues
-              cat > payload.json << EOF
-{
-  "success": false,
-  "storyId": "${{ github.event.pull_request.head.ref }}",
-  "prNumber": "${{ github.event.pull_request.number }}",
-  "errors": $(echo "$DEPLOY_ERROR" | jq -Rs .)
-}
-EOF
               
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
-                -d @payload.json
+                -d "{
+                  \"success\": false,
+                  \"storyId\": \"${{ github.event.pull_request.head.ref }}\",
+                  \"prNumber\": \"${{ github.event.pull_request.number }}\",
+                  \"errors\": \"$DEPLOY_ERROR\"
+                }"
             fi
 
         - name: Run Tests
