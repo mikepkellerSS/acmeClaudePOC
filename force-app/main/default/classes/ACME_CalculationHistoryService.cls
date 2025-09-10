@@ -6,21 +6,21 @@ public with sharing class ACME_CalculationHistoryService {
     
     /**
      * Create a new calculation history record
-     * @param calculationResult Numeric result of the calculation
+     * @param calculationResult Result of the mathematical operation
      * @param calculationType Type of calculation performed
-     * @param calculationExpression Full calculation expression
-     * @return Created Calculation History record
+     * @param operands List of operands used in the calculation
+     * @return Created calculation history record
      */
     public static ACME_CalculationHistory__c createCalculationHistory(
         Decimal calculationResult, 
         String calculationType, 
-        String calculationExpression
+        List<String> operands
     ) {
         try {
             ACME_CalculationHistory__c history = new ACME_CalculationHistory__c(
                 ACME__CalculationHistoryNumber__c = calculationResult,
                 ACME__CalculationType__c = calculationType,
-                Name = calculationExpression
+                Name = String.format('{0} {1} {2} = {3}', operands + new List<String>{String.valueOf(calculationResult)})
             );
             
             insert history;
@@ -37,8 +37,7 @@ public with sharing class ACME_CalculationHistoryService {
      */
     public static void deleteOldCalculationHistories(Integer daysToRetain) {
         try {
-            DateTime cutoffDate = System.now().addDays(-daysToRetain);
-            
+            Datetime cutoffDate = System.now().addDays(-daysToRetain);
             List<ACME_CalculationHistory__c> oldHistories = [
                 SELECT Id 
                 FROM ACME_CalculationHistory__c 
