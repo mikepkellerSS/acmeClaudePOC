@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Operation__c</fullName>
+    <label>Operation</label>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>ADD</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>SUBTRACT</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>MULTIPLY</fullName>
+                <default>false</default>
+            </value>
+            <value>
+                <fullName>DIVIDE</fullName>
+                <default>false</default>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>
