@@ -5,18 +5,18 @@
 public with sharing class ACME_MathService {
     
     /**
-     * Perform addition of two numbers and log calculation history
-     * @param num1 First number to add
-     * @param num2 Second number to add
+     * Perform addition and log calculation history
+     * @param a First number to add
+     * @param b Second number to add
      * @return Calculation result
      */
-    public static Decimal add(Decimal num1, Decimal num2) {
+    public static Decimal add(Decimal a, Decimal b) {
         try {
-            Decimal result = num1 + num2;
+            Decimal result = a + b;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Addition', 
-                String.valueOf(num1) + ' + ' + String.valueOf(num2)
+                String.valueOf(a) + ' + ' + String.valueOf(b)
             );
             return result;
         } catch (Exception e) {
@@ -26,18 +26,18 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform subtraction of two numbers and log calculation history
-     * @param num1 First number to subtract from
-     * @param num2 Number to subtract
+     * Perform subtraction and log calculation history
+     * @param a Number to subtract from
+     * @param b Number to subtract
      * @return Calculation result
      */
-    public static Decimal subtract(Decimal num1, Decimal num2) {
+    public static Decimal subtract(Decimal a, Decimal b) {
         try {
-            Decimal result = num1 - num2;
+            Decimal result = a - b;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Subtraction', 
-                String.valueOf(num1) + ' - ' + String.valueOf(num2)
+                String.valueOf(a) + ' - ' + String.valueOf(b)
             );
             return result;
         } catch (Exception e) {
@@ -47,18 +47,18 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform multiplication of two numbers and log calculation history
-     * @param num1 First number to multiply
-     * @param num2 Second number to multiply
+     * Perform multiplication and log calculation history
+     * @param a First number to multiply
+     * @param b Second number to multiply
      * @return Calculation result
      */
-    public static Decimal multiply(Decimal num1, Decimal num2) {
+    public static Decimal multiply(Decimal a, Decimal b) {
         try {
-            Decimal result = num1 * num2;
+            Decimal result = a * b;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Multiplication', 
-                String.valueOf(num1) + ' * ' + String.valueOf(num2)
+                String.valueOf(a) + ' * ' + String.valueOf(b)
             );
             return result;
         } catch (Exception e) {
@@ -68,21 +68,22 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform division of two numbers and log calculation history
-     * @param num1 Dividend
-     * @param num2 Divisor
+     * Perform division and log calculation history
+     * @param a Number to divide
+     * @param b Number to divide by
      * @return Calculation result
+     * @throws DivideByZeroException if b is zero
      */
-    public static Decimal divide(Decimal num1, Decimal num2) {
+    public static Decimal divide(Decimal a, Decimal b) {
         try {
-            if (num2 == 0) {
-                throw new ArithmeticException('Division by zero is not allowed');
+            if (b == 0) {
+                throw new DivideByZeroException('Cannot divide by zero');
             }
-            Decimal result = num1 / num2;
+            Decimal result = a / b;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Division', 
-                String.valueOf(num1) + ' / ' + String.valueOf(num2)
+                String.valueOf(a) + ' / ' + String.valueOf(b)
             );
             return result;
         } catch (Exception e) {
