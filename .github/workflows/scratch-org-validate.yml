@@ -97,21 +97,17 @@ jobs:
             echo "Starting deployment to scratch org..."
             
             # Use JSON output for structured error reporting
-            sf project deploy start -o scratch-org -w 20 --json > deploy-output.json 2>&1
-            DEPLOY_EXIT_CODE=$?
-            
-            # Display the output for debugging
-            cat deploy-output.json
-            
-            if [ $DEPLOY_EXIT_CODE -ne 0 ]; then
-              echo "deploy_success=false" >> $GITHUB_OUTPUT
-              echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
-              
-              # Just send the entire JSON response - Claude will understand it
-              cp deploy-output.json deploy-errors.json
-            else
+            if sf project deploy start -o scratch-org -w 20 --json > deploy-output.json 2>&1; then
               echo "deploy_success=true" >> $GITHUB_OUTPUT
               echo "Deployment succeeded!"
+            else
+              echo "deploy_success=false" >> $GITHUB_OUTPUT
+              echo "Deployment failed"
+              
+              # Display the output for debugging
+              echo "=== DEPLOYMENT ERROR OUTPUT ==="
+              cat deploy-output.json
+              echo "=== END DEPLOYMENT ERROR OUTPUT ==="
             fi
 
         - name: Report validation results to Replit
@@ -129,24 +125,17 @@ jobs:
             else
               echo "Reporting failure to Replit..."
               
-              # Create JSON payload with deployment errors  
+              # Get deployment errors or fallback
               if [ -f deploy-output.json ]; then
-                # Send the raw JSON directly as the errors field
-                jq -n --arg storyId "${{ github.event.pull_request.head.ref }}" \
-                      --arg prNumber "${{ github.event.pull_request.number }}" \
-                      --argjson errors "$(cat deploy-output.json)" \
-                      '{success: false, storyId: $storyId, prNumber: $prNumber, errors: ($errors | tostring)}' > callback-payload.json
+                DEPLOY_ERROR=$(cat deploy-output.json)
               else
-                # Fallback if no deployment output
-                jq -n --arg storyId "${{ github.event.pull_request.head.ref }}" \
-                      --arg prNumber "${{ github.event.pull_request.number }}" \
-                      --arg errors "Deployment failed - check GitHub Actions logs for details" \
-                      '{success: false, storyId: $storyId, prNumber: $prNumber, errors: $errors}' > callback-payload.json
+                DEPLOY_ERROR="Deployment failed - check GitHub Actions logs for details"
               fi
               
+              # Simple approach - let the server handle any JSON parsing
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
-                -d @callback-payload.json
+                --data-raw '{"success": false, "storyId": "${{ github.event.pull_request.head.ref }}", "prNumber": "${{ github.event.pull_request.number }}", "errors": "'"$(echo "$DEPLOY_ERROR" | sed 's/"/\\"/g' | tr -d '\n\r')"'"}'
             fi
 
         - name: Run Tests
