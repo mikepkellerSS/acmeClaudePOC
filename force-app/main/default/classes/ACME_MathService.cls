@@ -5,18 +5,18 @@
 public with sharing class ACME_MathService {
     
     /**
-     * Perform addition and log calculation history
-     * @param a First number to add
-     * @param b Second number to add
+     * Perform addition of two numbers and log calculation history
+     * @param num1 First number to add
+     * @param num2 Second number to add
      * @return Calculation result
      */
-    public static Decimal add(Decimal a, Decimal b) {
+    public static Decimal add(Decimal num1, Decimal num2) {
         try {
-            Decimal result = a + b;
+            Decimal result = num1 + num2;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Addition', 
-                String.valueOf(a) + ' + ' + String.valueOf(b)
+                new List<String>{String.valueOf(num1), String.valueOf(num2)}
             );
             return result;
         } catch (Exception e) {
@@ -26,18 +26,18 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform subtraction and log calculation history
-     * @param a Number to subtract from
-     * @param b Number to subtract
+     * Perform subtraction of two numbers and log calculation history
+     * @param num1 First number to subtract from
+     * @param num2 Number to subtract
      * @return Calculation result
      */
-    public static Decimal subtract(Decimal a, Decimal b) {
+    public static Decimal subtract(Decimal num1, Decimal num2) {
         try {
-            Decimal result = a - b;
+            Decimal result = num1 - num2;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Subtraction', 
-                String.valueOf(a) + ' - ' + String.valueOf(b)
+                new List<String>{String.valueOf(num1), String.valueOf(num2)}
             );
             return result;
         } catch (Exception e) {
@@ -47,18 +47,18 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform multiplication and log calculation history
-     * @param a First number to multiply
-     * @param b Second number to multiply
+     * Perform multiplication of two numbers and log calculation history
+     * @param num1 First number to multiply
+     * @param num2 Second number to multiply
      * @return Calculation result
      */
-    public static Decimal multiply(Decimal a, Decimal b) {
+    public static Decimal multiply(Decimal num1, Decimal num2) {
         try {
-            Decimal result = a * b;
+            Decimal result = num1 * num2;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Multiplication', 
-                String.valueOf(a) + ' * ' + String.valueOf(b)
+                new List<String>{String.valueOf(num1), String.valueOf(num2)}
             );
             return result;
         } catch (Exception e) {
@@ -68,22 +68,21 @@ public with sharing class ACME_MathService {
     }
 
     /**
-     * Perform division and log calculation history
-     * @param a Number to divide
-     * @param b Number to divide by
+     * Perform division of two numbers and log calculation history
+     * @param num1 Dividend
+     * @param num2 Divisor
      * @return Calculation result
-     * @throws DivideByZeroException if b is zero
      */
-    public static Decimal divide(Decimal a, Decimal b) {
+    public static Decimal divide(Decimal num1, Decimal num2) {
         try {
-            if (b == 0) {
-                throw new DivideByZeroException('Cannot divide by zero');
+            if (num2 == 0) {
+                throw new MathException('Division by zero is not allowed');
             }
-            Decimal result = a / b;
+            Decimal result = num1 / num2;
             ACME_CalculationHistoryService.createCalculationHistory(
                 result, 
                 'Division', 
-                String.valueOf(a) + ' / ' + String.valueOf(b)
+                new List<String>{String.valueOf(num1), String.valueOf(num2)}
             );
             return result;
         } catch (Exception e) {
@@ -91,4 +90,7 @@ public with sharing class ACME_MathService {
             throw e;
         }
     }
+
+    // Custom exception for math-related errors
+    public class MathException extends Exception {}
 }
