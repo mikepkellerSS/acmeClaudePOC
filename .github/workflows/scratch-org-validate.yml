@@ -131,14 +131,18 @@ jobs:
                 DEPLOY_ERROR="Validation failed - check GitHub Actions logs for details"
               fi
               
+              # Use heredoc to avoid JSON escaping issues
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
-                -d "{
-                  \"success\": false,
-                  \"storyId\": \"${{ github.event.pull_request.head.ref }}\",
-                  \"prNumber\": \"${{ github.event.pull_request.number }}\",
-                  \"errors\": \"$DEPLOY_ERROR\"
-                }"
+                -d "$(cat <<EOF
+{
+  \"success\": false,
+  \"storyId\": \"${{ github.event.pull_request.head.ref }}\",
+  \"prNumber\": \"${{ github.event.pull_request.number }}\",
+  \"errors\": $(echo "$DEPLOY_ERROR" | jq -R .)
+}
+EOF
+)"
             fi
 
         - name: Run Tests
