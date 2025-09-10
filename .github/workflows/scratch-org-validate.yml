@@ -71,18 +71,6 @@ jobs:
 
             rm auth-url.txt
 
-        - name: Verify DevHub Status
-          if: env.DEVHUB_AUTH_URL != ''
-          continue-on-error: true
-          run: |
-            sf org list --json > org-list.json
-            if ! grep -q '"isDevHub":true' org-list.json; then
-              echo "ERROR: No valid DevHub found in authorized orgs"
-              rm org-list.json
-              exit 1
-            fi
-            echo "DevHub verification successful"
-            rm org-list.json
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
