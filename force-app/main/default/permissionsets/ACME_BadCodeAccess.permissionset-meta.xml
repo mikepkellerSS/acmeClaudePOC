@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <label>ACME Bad Code Access</label>
+    <description>Permission set for accessing bad code generation classes</description>
+    <classAccesses>
+        <apexClass>ACME_BadCodeGenerator</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+</PermissionSet>
