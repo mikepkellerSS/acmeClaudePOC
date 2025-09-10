@@ -128,15 +128,18 @@ jobs:
               echo "Reporting failure to Replit..."
               DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
               
-              # Fallback if no specific errors captured
-              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.json ]; then
-                # Just send the entire JSON
+              # Check if scratch org creation failed
+              if [ "${{ steps.create-org.outcome }}" == "failure" ]; then
+                DEPLOY_ERROR="Scratch org creation failed. DevHub authentication or org creation issue. Check DevHub is enabled and accessible."
+              # Check if deployment step ran but failed  
+              elif [ "${{ steps.deploy.outputs.deploy_success }}" == "false" ] && [ -f deploy-output.json ]; then
+                # Send the actual JSON deployment errors
                 DEPLOY_ERROR=$(cat deploy-output.json | sed 's/"/\\"/g')
               fi
               
-              # Default message if still no errors
+              # Final fallback
               if [ -z "$DEPLOY_ERROR" ]; then
-                DEPLOY_ERROR="Deployment failed - check GitHub Actions logs for details"
+                DEPLOY_ERROR="Validation failed - check GitHub Actions logs for details"
               fi
               
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
