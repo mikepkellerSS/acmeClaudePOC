@@ -71,13 +71,13 @@ private class ACME_MathServiceTest {
     }
 
     @isTest
-    static void testDivisionByZero() {
+    static void testDivideByZero() {
         Test.startTest();
         try {
             ACME_MathService.divide(10, 0);
-            System.assert(false, 'Division by zero should throw an exception');
-        } catch (ArithmeticException e) {
-            System.assert(true, 'Division by zero correctly handled');
+            System.assert(false, 'Divide by zero should throw an exception');
+        } catch (DivideByZeroException e) {
+            System.assert(true, 'Divide by zero exception was thrown');
         }
         Test.stopTest();
     }
