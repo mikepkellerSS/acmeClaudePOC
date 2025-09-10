@@ -63,8 +63,8 @@ jobs:
             echo "Authenticating to DevHub..."
             echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
 
-            # Authenticate with explicit DevHub flag
-            sf org login sfdx-url --sfdx-url-file auth-url.txt --alias devhub --set-default-dev-hub
+            # Authenticate with DevHub
+            sf org login sfdx-url -f auth-url.txt -a devhub -d
 
             # Verify authentication worked
             sf org list --json
