@@ -60,15 +60,8 @@ jobs:
         - name: Authenticate Dev Hub (if secret exists)
           if: env.DEVHUB_AUTH_URL != ''
           run: |
-            echo "Authenticating to DevHub..."
             echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
-
-            # Authenticate with DevHub
             sf org login sfdx-url -f auth-url.txt -a devhub -d
-
-            # Verify authentication worked
-            sf org list --json
-
             rm auth-url.txt
 
 
