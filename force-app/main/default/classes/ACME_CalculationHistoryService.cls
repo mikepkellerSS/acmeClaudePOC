@@ -9,7 +9,7 @@ public with sharing class ACME_CalculationHistoryService {
      * @param calculationResult Result of the calculation
      * @param calculationType Type of calculation performed
      * @param calculationExpression Full calculation expression
-     * @return Created Calculation History record
+     * @return Created calculation history record
      */
     public static ACME_CalculationHistory__c createCalculationHistory(
         Decimal calculationResult, 
@@ -33,7 +33,7 @@ public with sharing class ACME_CalculationHistoryService {
 
     /**
      * Delete old calculation history records
-     * @param daysToRetain Number of days to retain calculation history
+     * @param daysToRetain Number of days to retain records
      */
     public static void deleteOldCalculationHistories(Integer daysToRetain) {
         try {
