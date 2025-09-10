@@ -63,29 +63,36 @@ jobs:
             echo "Authenticating to DevHub..."
             echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
 
-            # Try to authenticate and set as DevHub
+            # Authenticate with explicit DevHub flag
             sf org login sfdx-url --sfdx-url-file auth-url.txt --alias devhub --set-default-dev-hub
 
-            # Verify it's a DevHub
-            sf org display --target-org devhub --json > org-info.json
-            cat org-info.json
+            # Verify authentication worked
+            sf org list --json
 
-            # Check if DevHub is enabled
-            if ! grep -q '"isDevHub":true' org-info.json; then
-              echo "ERROR: Authenticated org is not a DevHub. Enabling DevHub..."
-              # Try to enable DevHub (this might not work depending on org type)
-              sf org open --target-org devhub --path /lightning/setup/DevHub/home
+            rm auth-url.txt
+
+        - name: Verify DevHub Status
+          if: env.DEVHUB_AUTH_URL != ''
+          run: |
+            sf org list --json > org-list.json
+            if ! grep -q '"isDevHub":true' org-list.json; then
+              echo "ERROR: No valid DevHub found in authorized orgs"
+              exit 1
             fi
-
-            rm auth-url.txt org-info.json
+            echo "DevHub verification successful"
+            rm org-list.json
 
         - name: Create Scratch Org (if authenticated)
           id: create-org
           if: env.DEVHUB_AUTH_URL != ''
           continue-on-error: true
           run: |
-              sf org create scratch -f config/project-scratch-def.json -a scratch-org -d -y 1 -w 10
+            if sf org create scratch -f config/project-scratch-def.json -a scratch-org -d -y 1 -w 10; then
               echo "org_created=true" >> $GITHUB_OUTPUT
+            else
+              echo "org_created=false" >> $GITHUB_OUTPUT
+              echo "Scratch org creation failed"
+            fi
 
         - name: Deploy to Scratch Org
           if: steps.create-org.outputs.org_created == 'true'
