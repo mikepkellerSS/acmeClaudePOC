@@ -3,7 +3,7 @@ private class ACME_MathServiceTest {
     
     @TestSetup
     static void setupTestData() {
-        // Optional test setup if needed
+        // Optional: Create any required test setup data
     }
 
     @isTest
@@ -71,13 +71,13 @@ private class ACME_MathServiceTest {
     }
 
     @isTest
-    static void testDivideByZero() {
+    static void testDivisionByZero() {
         Test.startTest();
         try {
             ACME_MathService.divide(10, 0);
-            System.assert(false, 'Divide by zero should throw an exception');
-        } catch (DivideByZeroException e) {
-            System.assert(true, 'Divide by zero exception was thrown');
+            System.assert(false, 'Division by zero should throw an exception');
+        } catch (ACME_MathService.MathException e) {
+            System.assertEquals('Division by zero is not allowed', e.getMessage(), 'Correct error message');
         }
         Test.stopTest();
     }
