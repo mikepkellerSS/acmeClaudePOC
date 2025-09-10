@@ -57,9 +57,15 @@ jobs:
             EOF
             fi
 
+        - name: Debug Environment Variables
+          run: |
+            echo "DEVHUB_AUTH_URL env var length: ${#DEVHUB_AUTH_URL}"
+            echo "DEVHUB_AUTH_URL env var set: $([[ -n "$DEVHUB_AUTH_URL" ]] && echo 'YES' || echo 'NO')"
+            
         - name: Authenticate Dev Hub (if secret exists)
           if: env.DEVHUB_AUTH_URL != ''
           run: |
+            echo "Auth step running - DEVHUB_AUTH_URL is set"
             echo "${{ secrets.DEVHUB_AUTH_URL }}" > auth-url.txt
             sf org login sfdx-url -f auth-url.txt -a devhub -d
             rm auth-url.txt
