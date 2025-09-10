@@ -3,7 +3,7 @@
     <label>Calculation History</label>
     <pluralLabel>Calculation Histories</pluralLabel>
     <nameField>
-        <label>Calculation History Name</label>
+        <label>Calculation Name</label>
         <type>Text</type>
     </nameField>
     <deploymentStatus>Deployed</deploymentStatus>
