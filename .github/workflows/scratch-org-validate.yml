@@ -138,7 +138,7 @@ jobs:
               DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
               
               # Check if scratch org creation failed
-              if [ "${{ steps.create-org.outcome }}" == "failure" ]; then
+              if [ "${{ steps.create-org.outputs.org_created }}" != "true" ]; then
                 DEPLOY_ERROR="Scratch org creation failed. DevHub authentication or org creation issue. Check DevHub is enabled and accessible."
               # Check if deployment step ran but failed  
               elif [ "${{ steps.deploy.outputs.deploy_success }}" == "false" ] && [ -f deploy-output.json ]; then
