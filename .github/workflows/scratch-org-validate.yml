@@ -104,20 +104,8 @@ jobs:
               echo "deploy_success=false" >> $GITHUB_OUTPUT
               echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
               
-              # Extract errors from JSON output using jq
-              if command -v jq &> /dev/null; then
-                # Extract component errors from the JSON response
-                ERRORS=$(jq -r '.result.details.componentFailures[]? | "\(.componentType): \(.fullName) - \(.problem) (Line: \(.lineNumber // "N/A"))"' deploy-output.json 2>/dev/null | tr '\n' ' ' | sed 's/"/\\"/g')
-                
-                # If no component failures, try to get the error message
-                if [ -z "$ERRORS" ]; then
-                  ERRORS=$(jq -r '.message // .error // "Deployment failed - see logs"' deploy-output.json 2>/dev/null | sed 's/"/\\"/g')
-                fi
-              else
-                # Fallback if jq is not available - extract error patterns from JSON text
-                ERRORS=$(grep -oE '"problem":"[^"]*"|"message":"[^"]*"|"error":"[^"]*"' deploy-output.json | head -10 | tr '\n' ' ' | sed 's/"/\\"/g')
-              fi
-              
+              # Just send the entire JSON response - Claude will understand it
+              ERRORS=$(cat deploy-output.json | sed 's/"/\\"/g')
               echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
             else
               echo "deploy_success=true" >> $GITHUB_OUTPUT
@@ -142,8 +130,8 @@ jobs:
               
               # Fallback if no specific errors captured
               if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.json ]; then
-                # Try to extract any error info from JSON
-                DEPLOY_ERROR=$(grep -oE '"problem":"[^"]*"|"message":"[^"]*"|"error":"[^"]*"' deploy-output.json | head -5 | tr '\n' ' ' | sed 's/"/\\"/g' || echo "Deployment failed - check GitHub Actions logs")
+                # Just send the entire JSON
+                DEPLOY_ERROR=$(cat deploy-output.json | sed 's/"/\\"/g')
               fi
               
               # Default message if still no errors
