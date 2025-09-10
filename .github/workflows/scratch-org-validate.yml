@@ -108,8 +108,7 @@ jobs:
               echo "Deployment failed with exit code: $DEPLOY_EXIT_CODE"
               
               # Just send the entire JSON response - Claude will understand it
-              ERRORS=$(cat deploy-output.json | sed 's/"/\\"/g')
-              echo "deploy_errors=$ERRORS" >> $GITHUB_OUTPUT
+              cp deploy-output.json deploy-errors.json
             else
               echo "deploy_success=true" >> $GITHUB_OUTPUT
               echo "Deployment succeeded!"
@@ -129,27 +128,25 @@ jobs:
                 }'
             else
               echo "Reporting failure to Replit..."
-              DEPLOY_ERROR="${{ steps.deploy.outputs.deploy_errors }}"
               
-              # Fallback if no specific errors captured
-              if [ -z "$DEPLOY_ERROR" ] && [ -f deploy-output.json ]; then
-                # Just send the entire JSON
-                DEPLOY_ERROR=$(cat deploy-output.json | sed 's/"/\\"/g')
-              fi
-              
-              # Default message if still no errors
-              if [ -z "$DEPLOY_ERROR" ]; then
-                DEPLOY_ERROR="Deployment failed - check GitHub Actions logs for details"
+              # Create JSON payload with deployment errors  
+              if [ -f deploy-output.json ]; then
+                # Send the raw JSON directly as the errors field
+                jq -n --arg storyId "${{ github.event.pull_request.head.ref }}" \
+                      --arg prNumber "${{ github.event.pull_request.number }}" \
+                      --argjson errors "$(cat deploy-output.json)" \
+                      '{success: false, storyId: $storyId, prNumber: $prNumber, errors: ($errors | tostring)}' > callback-payload.json
+              else
+                # Fallback if no deployment output
+                jq -n --arg storyId "${{ github.event.pull_request.head.ref }}" \
+                      --arg prNumber "${{ github.event.pull_request.number }}" \
+                      --arg errors "Deployment failed - check GitHub Actions logs for details" \
+                      '{success: false, storyId: $storyId, prNumber: $prNumber, errors: $errors}' > callback-payload.json
               fi
               
               curl -X POST https://9734b75b-fbc8-4b34-a2f2-0236da170064-00-3orv9mnjgg5yz.riker.replit.dev/webhook/github-callback \
                 -H "Content-Type: application/json" \
-                -d "{
-                  \"success\": false,
-                  \"storyId\": \"${{ github.event.pull_request.head.ref }}\",
-                  \"prNumber\": \"${{ github.event.pull_request.number }}\",
-                  \"errors\": \"$DEPLOY_ERROR\"
-                }"
+                -d @callback-payload.json
             fi
 
         - name: Run Tests
