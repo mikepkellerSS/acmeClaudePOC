@@ -7,7 +7,7 @@ const LEAD_FIELDS = [
     'Lead.ACME__Engagement_Score__c'
 ];
 
-export default class AcmeLeadScoreBreakdownLwc extends LightningElement {
+export default class ACME_LeadScoreBreakdownLWC extends LightningElement {
     @api recordId;
     leadRecord;
 
