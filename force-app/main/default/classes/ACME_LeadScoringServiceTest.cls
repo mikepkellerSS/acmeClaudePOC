@@ -1,7 +1,7 @@
 /**
- * @description Test class for Lead Scoring Service
- * @author Acme Corp
- * @date 2024
+ * @description Test class for ACME_LeadScoringService
+ * @author Acme Corp Development Team
+ * @date 2024-02-15
  */
 @isTest
 private class ACME_LeadScoringServiceTest {
@@ -12,21 +12,21 @@ private class ACME_LeadScoringServiceTest {
         // High Score Lead
         testLeads.add(new Lead(
             FirstName = 'High Score',
-            LastName = 'Lead',
+            LastName = 'Prospect',
             Title = 'VP of Sales',
             Company = 'Large Tech Corp',
             NumberOfEmployees = 1000,
             Industry = 'Technology',
-            ACME__Whitepaper_Downloaded__c = true,
-            ACME__Webinar_Attended__c = true,
-            ACME__Pricing_Page_Visited__c = true,
-            ACME__Demo_Requested__c = true
+            ACME__Downloaded_Whitepaper__c = true,
+            ACME__Attended_Webinar__c = true,
+            ACME__Visited_Pricing_Page__c = true,
+            ACME__Requested_Demo__c = true
         ));
 
         // Low Score Lead
         testLeads.add(new Lead(
             FirstName = 'Low Score',
-            LastName = 'Lead',
+            LastName = 'Prospect',
             Title = 'Intern',
             Company = 'Small Startup',
             NumberOfEmployees = 10,
@@ -37,10 +37,10 @@ private class ACME_LeadScoringServiceTest {
     }
 
     @isTest
-    static void testLeadScoringService() {
+    static void testLeadScoringCalculation() {
         List<Lead> leads = [SELECT Id, Title, NumberOfEmployees, Industry, 
-                            ACME__Whitepaper_Downloaded__c, ACME__Webinar_Attended__c, 
-                            ACME__Pricing_Page_Visited__c, ACME__Demo_Requested__c 
+                                   ACME__Downloaded_Whitepaper__c, ACME__Attended_Webinar__c, 
+                                   ACME__Visited_Pricing_Page__c, ACME__Requested_Demo__c 
                             FROM Lead];
         
         Test.startTest();
@@ -59,8 +59,8 @@ private class ACME_LeadScoringServiceTest {
         System.assertEquals(0, lowScoreLead.ACME__Engagement_Score__c, 'Low score engagement score incorrect');
         System.assertEquals(0, lowScoreLead.ACME__Lead_Score__c, 'Low score total lead score incorrect');
 
-        // Verify Scoring History Records
+        // Verify Lead Scoring History created
         List<ACME_LeadScoringHistory__c> histories = [SELECT Id FROM ACME_LeadScoringHistory__c];
-        System.assertEquals(2, histories.size(), 'Incorrect number of scoring history records');
+        System.assertEquals(2, histories.size(), 'Incorrect number of lead scoring history records');
     }
 }
