@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ACME_LeadScoringService</members>
+        <members>ACME_LeadScoringServiceTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>ACME_LeadScoringTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
+        <members>Lead.ACME__Lead_Score__c</members>
+        <members>Lead.ACME__Demographic_Score__c</members>
+        <members>Lead.ACME__Engagement_Score__c</members>
+        <members>ACME_LeadScoringHistory__c.ACME__Previous_Score__c</members>
+        <members>ACME_LeadScoringHistory__c.ACME__New_Score__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>ACME_LeadScoreBreakdownLWC</members>
+        <name>LightningComponentBundle</name>
+    </types>
+    <version>59.0</version>
+</Package>
