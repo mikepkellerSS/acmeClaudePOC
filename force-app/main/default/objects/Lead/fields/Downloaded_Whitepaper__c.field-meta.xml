@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Downloaded_Whitepaper__c</fullName>
+    <label>Downloaded Whitepaper</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+    <description>Indicates if lead has downloaded a whitepaper</description>
+</CustomField>
