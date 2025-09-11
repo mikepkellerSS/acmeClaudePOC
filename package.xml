@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>LeadScoringService</members>
+        <members>LeadScoringServiceTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>LeadScoringTrigger</members>
+        <name>ApexTrigger</name>
+    </types>
+    <types>
+        <members>LeadScoreCalculationFlow</members>
+        <name>Flow</name>
+    </types>
+    <types>
+        <members>Lead.Lead_Score__c</members>
+        <members>Lead.Demographic_Score__c</members>
+        <members>Lead.Engagement_Score__c</members>
+        <members>Lead.Downloaded_Whitepaper__c</members>
+        <members>Lead.Attended_Webinar__c</members>
+        <members>Lead.Visited_Pricing_Page__c</members>
+        <members>Lead.Requested_Demo__c</members>
+        <members>LeadScoringHistory__c.Lead__c</members>
+        <members>LeadScoringHistory__c.Previous_Score__c</members>
+        <members>LeadScoringHistory__c.New_Score__c</members>
+        <members>LeadScoringHistory__c.Timestamp__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>leadScoreBreakdownComponent</members>
+        <name>LightningComponentBundle</name>
+    </types>
+    <version>59.0</version>
+</Package>
