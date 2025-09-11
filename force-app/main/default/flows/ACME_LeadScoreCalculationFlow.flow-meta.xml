@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>59.0</apiVersion>
+    <label>Lead Score Calculation Flow</label>
+    <processType>AutoLaunchedFlow</processType>
+    <start>
+        <locationX>50</locationX>
+        <locationY>50</locationY>
+        <connector>
+            <targetReference>UpdateLeadQualificationStatus</targetReference>
+        </connector>
+    </start>
+    <assignments>
+        <name>UpdateLeadQualificationStatus</name>
+        <label>Update Lead Qualification Status</label>
+        <locationX>50</locationX>
+        <locationY>150</locationY>
+        <assignmentItems>
+            <assignToReference>$Record.Status</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>LeadQualificationStatus</elementReference>
+            </value>
+        </assignmentItems>
+    </assignments>
+    <formulas>
+        <name>LeadQualificationStatus</name>
+        <dataType>String</dataType>
+        <expression>IF(BLANKVALUE({!$Record.ACME__Lead_Score__c}, 0) >= 70, 'MQL', 'SQL')</expression>
+    </formulas>
+</Flow>
