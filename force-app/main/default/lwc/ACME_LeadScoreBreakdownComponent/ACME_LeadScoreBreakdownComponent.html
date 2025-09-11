@@ -1,0 +1,17 @@
+<template>
+    <lightning-card title="Lead Score Breakdown">
+        <div class="slds-p-around_medium">
+            <div class="slds-grid slds-gutters">
+                <div class="slds-col">
+                    <p class="slds-text-heading_medium" style={scoreColorStyle}>Total Score: {totalScore}</p>
+                </div>
+            </div>
+            <div class="slds-grid slds-gutters slds-m-top_small">
+                <div class="slds-col">
+                    <p>Demographic Score: {demographicScore} / 40</p>
+                    <p>Engagement Score: {engagementScore} / 60</p>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>
