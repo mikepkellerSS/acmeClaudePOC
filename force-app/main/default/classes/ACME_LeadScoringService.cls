@@ -1,15 +1,14 @@
 /**
  * @description Lead Scoring Service for automated lead qualification
- * @author Acme Corp
- * @date 2024
+ * @author Acme Corp Development Team
+ * @date 2024-02-15
  */
 public with sharing class ACME_LeadScoringService {
-    private static final Integer MAX_DEMOGRAPHIC_SCORE = 40;
-    private static final Integer MAX_ENGAGEMENT_SCORE = 60;
-    private static final Set<String> SENIOR_TITLES = new Set<String>{
+    private static final List<String> SENIOR_TITLES = new List<String>{
         'Manager', 'Director', 'VP', 'C-Level', 'Chief', 'President'
     };
-    private static final Set<String> TARGET_INDUSTRIES = new Set<String>{
+    
+    private static final List<String> TARGET_INDUSTRIES = new List<String>{
         'Technology', 'Healthcare', 'Finance'
     };
 
@@ -19,6 +18,10 @@ public with sharing class ACME_LeadScoringService {
      * @return List of leads with updated scores
      */
     public static List<Lead> calculateLeadScores(List<Lead> leads) {
+        if (leads == null || leads.isEmpty()) {
+            return leads;
+        }
+
         for (Lead lead : leads) {
             Integer demographicScore = calculateDemographicScore(lead);
             Integer engagementScore = calculateEngagementScore(lead);
@@ -27,16 +30,16 @@ public with sharing class ACME_LeadScoringService {
             lead.ACME__Engagement_Score__c = engagementScore;
             lead.ACME__Lead_Score__c = demographicScore + engagementScore;
 
-            // Create scoring history record
-            createScoringHistoryRecord(lead);
+            createLeadScoringHistory(lead);
         }
+
         return leads;
     }
 
     /**
      * Calculate demographic score based on job title, company size, and industry
      * @param lead Lead record to evaluate
-     * @return Demographic score
+     * @return Demographic score (0-40)
      */
     private static Integer calculateDemographicScore(Lead lead) {
         Integer score = 0;
@@ -66,56 +69,52 @@ public with sharing class ACME_LeadScoringService {
             }
         }
 
-        return Math.min(score, MAX_DEMOGRAPHIC_SCORE);
+        return Math.min(score, 40);
     }
 
     /**
      * Calculate engagement score based on lead interactions
      * @param lead Lead record to evaluate
-     * @return Engagement score
+     * @return Engagement score (0-60)
      */
     private static Integer calculateEngagementScore(Lead lead) {
         Integer score = 0;
 
-        // Whitepaper Download
-        if (lead.ACME__Whitepaper_Downloaded__c == true) {
+        // Interaction Scoring
+        if (lead.ACME__Downloaded_Whitepaper__c == true) {
             score += 10;
         }
-
-        // Webinar Attendance
-        if (lead.ACME__Webinar_Attended__c == true) {
+        if (lead.ACME__Attended_Webinar__c == true) {
             score += 15;
         }
-
-        // Pricing Page Visit
-        if (lead.ACME__Pricing_Page_Visited__c == true) {
+        if (lead.ACME__Visited_Pricing_Page__c == true) {
             score += 20;
         }
-
-        // Demo Request
-        if (lead.ACME__Demo_Requested__c == true) {
+        if (lead.ACME__Requested_Demo__c == true) {
             score += 15;
         }
 
-        return Math.min(score, MAX_ENGAGEMENT_SCORE);
+        return Math.min(score, 60);
     }
 
     /**
-     * Create lead scoring history record
+     * Create lead scoring history record for audit trail
      * @param lead Lead record with updated score
      */
-    private static void createScoringHistoryRecord(Lead lead) {
+    private static void createLeadScoringHistory(Lead lead) {
+        if (lead.Id == null) return;
+
         ACME_LeadScoringHistory__c history = new ACME_LeadScoringHistory__c(
             ACME__Lead__c = lead.Id,
             ACME__Previous_Score__c = lead.ACME__Lead_Score__c ?? 0,
             ACME__New_Score__c = lead.ACME__Lead_Score__c,
             ACME__Timestamp__c = System.now()
         );
-        
+
         try {
             insert history;
         } catch (Exception e) {
-            ACME_ErrorHandler.logError('ACME_LeadScoringService', 'createScoringHistoryRecord', e);
+            ACME_ErrorHandler.logError('ACME_LeadScoringService', 'createLeadScoringHistory', e);
         }
     }
 }
