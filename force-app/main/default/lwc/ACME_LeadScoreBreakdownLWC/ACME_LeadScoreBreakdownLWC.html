@@ -3,18 +3,16 @@
         <div class="slds-p-around_medium">
             <div class="slds-grid slds-gutters">
                 <div class="slds-col">
-                    <div class="slds-text-heading_small">Total Score</div>
-                    <div class="slds-text-heading_large" style={scoreColorStyle}>
-                        {totalScore}/100
-                    </div>
+                    <p class="slds-text-heading_small">Total Score</p>
+                    <lightning-badge label={totalScore} variant="brand" style={`background-color: ${scoreColor}`}></lightning-badge>
                 </div>
                 <div class="slds-col">
-                    <div class="slds-text-title">Demographic Score</div>
-                    <div class="slds-text-body_regular">{demographicScore}/40</div>
+                    <p class="slds-text-heading_small">Demographic Score</p>
+                    <lightning-badge label={demographicScore} variant="inverse"></lightning-badge>
                 </div>
                 <div class="slds-col">
-                    <div class="slds-text-title">Engagement Score</div>
-                    <div class="slds-text-body_regular">{engagementScore}/60</div>
+                    <p class="slds-text-heading_small">Engagement Score</p>
+                    <lightning-badge label={engagementScore} variant="inverse"></lightning-badge>
                 </div>
             </div>
         </div>
