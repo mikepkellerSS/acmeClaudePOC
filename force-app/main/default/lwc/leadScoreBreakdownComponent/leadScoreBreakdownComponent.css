@@ -1,0 +1,19 @@
+.progress-bar-container {
+    margin-top: 1rem;
+}
+
+.score-section {
+    text-align: center;
+    padding: 0.5rem;
+}
+
+.score-badge {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.score-description {
+    font-size: 0.875rem;
+    color: #706e6b;
+    margin-top: 0.25rem;
+}
