@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types>
+        <members>ACME__CalculationHistorySelector</members>
+        <members>ACME__CalculatorService</members>
+        <members>ACME__CalculatorServiceTest</members>
+        <name>ApexClass</name>
+    </types>
+    <types>
+        <members>ACME_CalculationHistory__c.ACME__Operation__c</members>
+        <members>ACME_CalculationHistory__c.ACME__FirstOperand__c</members>
+        <members>ACME_CalculationHistory__c.ACME__SecondOperand__c</members>
+        <members>ACME_CalculationHistory__c.ACME__Result__c</members>
+        <name>CustomField</name>
+    </types>
+    <types>
+        <members>ACME_CalculationHistory__c</members>
+        <name>CustomObject</name>
+    </types>
+    <version>59.0</version>
+</Package>
