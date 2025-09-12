@@ -1,0 +1,39 @@
+<template>
+    <lightning-card title='Supreme Court Decision Query'>
+        <div class='slds-p-around_medium'>
+            <lightning-input 
+                label='Ask a question about Supreme Court decisions' 
+                value={query}
+                onchange={handleQueryChange}
+                placeholder='e.g., What statutes apply to electronic evidence?'>
+            </lightning-input>
+            <lightning-button 
+                variant='brand' 
+                label='Query Decisions' 
+                onclick={submitQuery}
+                disabled={isLoading}>
+            </lightning-button>
+
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text='Loading' size='medium'></lightning-spinner>
+            </template>
+
+            <template if:true={response}>
+                <div class='slds-m-top_medium'>
+                    <h3 class='slds-text-heading_small'>Response:</h3>
+                    <p>{response}</p>
+                </div>
+            </template>
+
+            <template if:true={recentDecisions.length}>
+                <div class='slds-m-top_medium'>
+                    <h3 class='slds-text-heading_small'>Recent Decisions:</h3>
+                    <lightning-datatable 
+                        columns={columns} 
+                        data={recentDecisions}>
+                    </lightning-datatable>
+                </div>
+            </template>
+        </div>
+    </lightning-card>
+</template>

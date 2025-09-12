@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<PermissionSet xmlns='http://soap.sforce.com/2006/04/metadata'>
+    <label>Supreme Court Decision Query Permissions</label>
+    <description>Allows access to Supreme Court decision query features</description>
+    <objectPermissions>
+        <object>ACME_SupremeCourtDecision__c</object>
+        <allowRead>true</allowRead>
+        <allowCreate>false</allowCreate>
+        <allowEdit>false</allowEdit>
+        <allowDelete>false</allowDelete>
+        <viewAllRecords>true</viewAllRecords>
+        <modifyAllRecords>false</modifyAllRecords>
+    </objectPermissions>
+</PermissionSet>
